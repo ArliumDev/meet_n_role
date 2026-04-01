@@ -1,14 +1,16 @@
 import os
-import psycopg2
+import asyncpg
 from dotenv import load_dotenv
 
 load_dotenv()
 
-conn = psycopg2.connect(
-  dbname=os.getenv("POSTGRES_DB"),
-  user=os.getenv("POSTGRES_USER"),
-  password=os.getenv("POSTGRESS_PASSWORD"),
-  host=os.getenv("POSTGRES_HOST"),
-  port=os.getenv("POSTGRES_PORT"),
-)
-cur = conn.cursor()
+async def create_pool():
+  return await asyncpg.create_pool(
+    user=os.getenv("POSTGRES_USER"),
+    password=os.getenv("POSTGRES_PASSWORD"),
+    database=os.getenv("POSTGRES_DB"),
+    host=os.getenv("POSTGRES_HOST"),
+    port=os.getenv("POSTGRES_PORT"),
+    min_size=1,
+    max_size=10
+  )

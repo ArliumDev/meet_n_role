@@ -1,0 +1,1 @@
+- Posibilidad de preestablecer las clases al registrarse en un evento.
