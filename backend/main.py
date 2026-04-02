@@ -1,8 +1,7 @@
-from pydantic import BaseModel
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from database import create_pool
-from routers import users
+from routers import users, events
 
 # Startup event. Create pool
 
@@ -15,3 +14,4 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(users.router)
+app.include_router(events.router)

@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel, Field
-from typing import Optional
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -58,51 +57,52 @@ async def del_user(user_id: int, request: Request):
     
     return {"detail": "User has been deleted", "user": target}
 
-class UpdateUsername(BaseModel):
-  username: str
+class UpdateUser(BaseModel):
+  username: str | None = None
+  password: str | None = None
 
-@router.patch("/users/{user_id}/username")
-async def change_username(user_id: int, body: UpdateUsername, request: Request):
+@router.patch("/users/{user_id}")
+async def patch_user(user_id: int, body: UpdateUser, request: Request):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
     current_user = await conn.fetchrow(
-      "SELECT id, username FROM users WHERE id=$1", user_id
+      "SELECT id, username, password FROM users where id=$1", user_id
     )
     if not current_user:
       raise HTTPException(status_code=404, detail="User not found")
     
-    existing = await conn.fetchrow(
-      "SELECT id FROM users WHERE username=$1 AND id<>$2", body.username, user_id
-    )
-    if existing:
-      raise HTTPException(status_code=400, detail="Username already exists")
-    
-    updated = await conn.fetchrow(
-      "UPDATE users SET username=$1 WHERE id=$2 RETURNING id, username", body.username, user_id
-    )
+    updates = {}
 
-    return {"id": updated["id"], "username": updated["username"]}
-  
-class UpdatePassword(BaseModel):
-  password: str
-  
-@router.patch("/users/{user_id}/password")
-async def change_password(user_id: int, body: UpdatePassword, request: Request):
-  pool = request.app.state.pool
-  async with pool.acquire() as conn:
-    current_user = await conn.fetchrow(
-      "SELECT id, password FROM users where id=$1", user_id
-    )
+    if body.username:
+      existing = await conn.fetchrow(
+        "SELECT id FROM users WHERE username=$1 AND id <>$2", body.username, user_id
+      )
+      if existing:
+        raise HTTPException(status_code=400, detail="Username already taken")
+      updates["username"] = body.username
     
-    if not current_user:
-      raise HTTPException(status_code=404, detail="User not found")
-    
-    if body.password == current_user["password"]:
-      raise HTTPException(status_code=400, detail="Password is the same as before")
-    
-    updated = await conn.fetchrow(
-      "UPDATE users SET password=$1 WHERE id=$2 RETURNING id, password",
-      body.password, user_id
-    )
+    if body.password:
+      if body.password == current_user["password"]:
+        raise HTTPException(status_code=400, detail="Password is the same as before")
+      updates["password"] = body.password
 
-    return {"id": updated["id"], "password": updated["password"]}
+    if not updates:
+      raise HTTPException(status_code=400, detail="No fields to update")
+    
+    set_clauses = []
+    values = []
+    idx = 1
+    for key, val in updates.items():
+      set_clauses.append(f"{key}=${idx}")
+      values.append(val)
+      idx += 1
+    values.append(user_id)
+    set_query = ", ".join(set_clauses)
+    query = f"UPDATE users SET {set_query} WHERE id=${idx} RETURNING id, username, password"
+
+    updated = await conn.fetchrow(query, *values)
+    return {
+      "id": updated["id"],
+      "username": updated["username"],
+      "password": updated["password"]
+    }
