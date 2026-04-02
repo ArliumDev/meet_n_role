@@ -26,3 +26,74 @@ async def create_event(event: CreateEvent, request: Request):
     )
 
     return {"id": result["id"], "title": result["title"], "description": result["description"], "date": result["date"], "max_players": result["max_players"], "created_at": result["created_at"]}
+  
+
+class UpdateEvent(BaseModel):
+  title: str | None = None
+  description: str | None = None
+  date: datetime | None = None
+  max_players: int | None = None
+
+@router.patch("/events/{event_id}")
+async def patch_event(event_id: int, master_id: int, body: UpdateEvent, request: Request):
+  pool = request.app.state.pool
+  async with pool.acquire() as conn:
+    existing = await conn.fetchrow(
+      "SELECT id FROM events WHERE id=$1", event_id
+    )
+    if not existing:
+      raise HTTPException(status_code=404, detail="Event not found")
+    
+    ismaster = await conn.fetchrow(
+      "SELECT id FROM events WHERE master_id=$1 AND master_id=$2", event_id, master_id
+    )
+
+    if not ismaster:
+      raise HTTPException(status_code=403, detail="Permission denied")
+    
+    updates = {key: value for key, value in body.model_dump().items() if value is not None}
+
+    if not updates:
+      raise HTTPException(status_code=400, detail="No fields to update")
+    
+    set_clauses = []
+    values = []
+    idx = 1
+    for key, value in updates.items():
+      set_clauses.append(f"{key}=${idx}")
+      values.append(value)
+      idx += 1
+    values.append(event_id)
+    set_query = ", ".join(set_clauses)
+    query = f"UPDATE events SET {set_query} WHERE id=${idx} RETURNING id, title, description, date, max_players, created_at"
+
+    updated = await conn.fetchrow(query, *values)
+    return {
+      "title": updated["title"],
+      "description": updated["description"],
+      "date": updated["date"],
+      "max_players": updated["max_players"],
+      "created_at": updated["created_at"]
+    }
+
+@router.delete("/events/{event_id}")
+async def del_event(event_id: int, master_id: int, request: Request):
+  pool = request.app.state.pool
+  async with pool.acquire() as conn:
+    existing = await conn.fetchrow(
+      "SELECT id FROM events WHERE id=$1", event_id
+    )
+    if not existing:
+      raise HTTPException(status_code=404, detail="Event not found")
+    
+    ismaster = await conn.fetchrow(
+      "SELECT id FROM events WHERE id=$1 AND master_id=$2", event_id, master_id
+    )
+    if not ismaster:
+      raise HTTPException(status_code=403, detail="Permission denied")
+    
+    target = await conn.fetchrow(
+      "DELETE FROM events WHERE id=$1 RETURNING id, title, date", event_id
+    )
+
+    return {"detail": "Event has been deleted", "event": target}
