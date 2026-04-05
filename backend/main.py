@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from database import create_pool
-from routers import users, events
+from routers import users, events, registrations
 
 # Startup event. Create pool
 
@@ -15,3 +15,4 @@ app = FastAPI(lifespan=lifespan)
 
 app.include_router(users.router)
 app.include_router(events.router)
+app.include_router(registrations.router)

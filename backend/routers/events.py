@@ -4,6 +4,26 @@ from datetime import datetime
 
 router = APIRouter()
 
+@router.get("/events")
+async def get_events_global(request: Request):
+  pool = request.app.state.pool
+  async with pool.acquire() as conn:
+    events = await conn.fetch(
+      "SELECT title, description, date, max_players, created_at, users.username AS master_username FROM events JOIN users ON events.master_id = users.id"
+    )
+    return events
+  
+@router.get("/events/{event_id}")
+async def get_event_info(event_id: int, request: Request):
+  pool = request.app.state.pool
+  async with pool.acquire() as conn:
+    event = await conn.fetchrow(
+      "SELECT title, description, date, max_players, created_at, users.username AS master_username FROM events JOIN users on events.master_id = users.id WHERE events.id=$1", event_id
+    )
+    if not event:
+      raise HTTPException(status_code=404, detail="Event not found")
+    return event
+
 class CreateEvent(BaseModel):
   title: str
   description: str
