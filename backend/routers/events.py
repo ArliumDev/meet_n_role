@@ -1,24 +1,40 @@
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from datetime import datetime
+from enum import Enum
 
 router = APIRouter()
 
 @router.get("/events")
 async def get_events_global(request: Request):
-  pool = request.app.state.pool
-  async with pool.acquire() as conn:
-    events = await conn.fetch(
-      "SELECT title, description, date, max_players, created_at, users.username AS master_username FROM events JOIN users ON events.master_id = users.id"
-    )
-    return events
+    pool = request.app.state.pool
+    async with pool.acquire() as conn:
+        events = await conn.fetch(
+            """
+            SELECT events.id, events.title, events.description, events.date, events.max_players, events.created_at, events.status, users.username AS master_username,
+            COUNT(registrations.user_id) AS player_joined
+            FROM events
+            JOIN users ON events.master_id = users.id
+            LEFT JOIN registrations ON registrations.event_id = events.id
+            GROUP BY events.id, users.username
+            """
+        )
+        return events
   
 @router.get("/events/{event_id}")
 async def get_event_info(event_id: int, request: Request):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
     event = await conn.fetchrow(
-      "SELECT title, description, date, max_players, created_at, users.username AS master_username FROM events JOIN users on events.master_id = users.id WHERE events.id=$1", event_id
+      """
+      SELECT events.id, events.title, events.description, events.date, events.max_players, events.created_at, events.status, users.username AS master_username,
+      COUNT(registrations.user_id) AS players_joined
+      FROM events
+      JOIN users ON events.master_id = users.id
+      LEFT JOIN registrations ON registrations.event_id = events.id
+      WHERE events.id=$1
+      GROUP BY events.id, users.username      
+      """, event_id
     )
     if not event:
       raise HTTPException(status_code=404, detail="Event not found")
@@ -47,12 +63,17 @@ async def create_event(event: CreateEvent, request: Request):
 
     return {"id": result["id"], "title": result["title"], "description": result["description"], "date": result["date"], "max_players": result["max_players"], "created_at": result["created_at"]}
   
+class EventStatus(str, Enum):
+  open = "open"
+  closed = "closed"
+  cancelled = "cancelled"  
 
 class UpdateEvent(BaseModel):
   title: str | None = None
   description: str | None = None
   date: datetime | None = None
   max_players: int | None = None
+  status: EventStatus | None = None
 
 @router.patch("/events/{event_id}")
 async def patch_event(event_id: int, master_id: int, body: UpdateEvent, request: Request):
@@ -65,7 +86,7 @@ async def patch_event(event_id: int, master_id: int, body: UpdateEvent, request:
       raise HTTPException(status_code=404, detail="Event not found")
     
     ismaster = await conn.fetchrow(
-      "SELECT id FROM events WHERE master_id=$1 AND master_id=$2", event_id, master_id
+      "SELECT id FROM events WHERE id=$1 AND master_id=$2", event_id, master_id
     )
 
     if not ismaster:
@@ -85,7 +106,7 @@ async def patch_event(event_id: int, master_id: int, body: UpdateEvent, request:
       idx += 1
     values.append(event_id)
     set_query = ", ".join(set_clauses)
-    query = f"UPDATE events SET {set_query} WHERE id=${idx} RETURNING id, title, description, date, max_players, created_at"
+    query = f"UPDATE events SET {set_query} WHERE id=${idx} RETURNING id, title, description, date, max_players, created_at, status"
 
     updated = await conn.fetchrow(query, *values)
     return {
@@ -93,7 +114,8 @@ async def patch_event(event_id: int, master_id: int, body: UpdateEvent, request:
       "description": updated["description"],
       "date": updated["date"],
       "max_players": updated["max_players"],
-      "created_at": updated["created_at"]
+      "created_at": updated["created_at"],
+      "status": updated["status"]
     }
 
 @router.delete("/events/{event_id}")
