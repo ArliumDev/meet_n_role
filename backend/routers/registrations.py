@@ -1,6 +1,4 @@
 from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel
-from datetime import datetime
 
 router = APIRouter()
 
@@ -55,4 +53,6 @@ async def join_game(event_id: int, user_id: int, request: Request):
       "joined_at": registration["joined_at"]
     }
     
+@router.get("/registrations/{user_id}")
+async def get_user_registrations(user_id: int, request:Request):
   

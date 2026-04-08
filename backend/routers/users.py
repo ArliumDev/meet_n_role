@@ -18,7 +18,7 @@ async def create_user(user: CreateUser, request: Request):
     )
 
     if existing:
-      raise HTTPException(status_code=404, detail="Username already exists")
+      raise HTTPException(status_code=409, detail="Username already exists")
     
     result = await conn.fetchrow(
       "INSERT INTO users (username, password, role) VALUES ($1,$2,$3) RETURNING id, username",
@@ -104,5 +104,4 @@ async def patch_user(user_id: int, body: UpdateUser, request: Request):
     return {
       "id": updated["id"],
       "username": updated["username"],
-      "password": updated["password"]
     }
