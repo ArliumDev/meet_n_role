@@ -139,3 +139,17 @@ async def del_event(event_id: int, master_id: int, request: Request):
     )
 
     return {"detail": "Event has been deleted", "event": target}
+  
+@router.get("/events/{event_id}/players")
+async def get_events_players(event_id: int, request: Request):
+  pool =  request.app.state.pool
+  async with pool.acquire() as conn:
+    players = await conn.fetch(
+      """
+      SELECT u.id, u.username
+      FROM registrations r
+      JOIN users u ON r.user_id = u.id
+      WHERE r.event_id = $1
+      """, event_id
+    )
+    return [{"id": p["id"], "username": p["username"]} for p in players]

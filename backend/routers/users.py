@@ -105,3 +105,22 @@ async def patch_user(user_id: int, body: UpdateUser, request: Request):
       "id": updated["id"],
       "username": updated["username"],
     }
+  
+@router.get("/users/{user_id}/events")
+async def get_user_events(user_id: int, request: Request):
+  pool = request.app.state.pool
+  async with pool.acquire() as conn:
+    events = await conn.fetch(
+      """
+      SELECT DISTINCT events.* , 
+      users.username AS master_username,
+      COUNT(registrations.user_id) AS player_joined
+      FROM registrations
+      JOIN events on registrations.event_id = events.id
+      JOIN users ON event.master_id = users.id
+      LEFT JOIN registration r2 ON r2.event_id = events.id
+      WHERE registrations.user_id = $1
+      GROUP BY events.id, users.username
+      """, user_id
+    )
+    return events
