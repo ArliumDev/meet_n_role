@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from utils.security import hash_password, verify_password
+from utils.jwt import create_token, verify_token
 from secrets import token_urlsafe
 
 
@@ -144,7 +145,10 @@ async def login(user: LoginRequest, request: Request):
     if not db_user or not verify_password(user.password, db_user["password"]):
       raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    return {"detail": "Login succeed"}
+    payload = {"user_id": db_user["id"], "username": db_user["username"]}
+    token = create_token(payload)
+    
+    return {"detail": "Login succeed", "access-token": token, "token-type": "bearer"}
   
 @router.post("/users/{user_id}/reset-password")
 async def reset_user_password(user_id: int, request: Request):
@@ -168,3 +172,4 @@ async def reset_user_password(user_id: int, request: Request):
       "detail": "Password has been reseted. Please change the password as soon as possible",
       "temp_password": f"Your temporary password is {new_password}"
     }
+  
