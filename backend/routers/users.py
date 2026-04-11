@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
+from utils.security import hash_password, verify_password
+
 
 router = APIRouter()
 
@@ -20,9 +22,11 @@ async def create_user(user: CreateUser, request: Request):
     if existing:
       raise HTTPException(status_code=409, detail="Username already exists")
     
+    hashed_password = hash_password(user.password) 
+
     result = await conn.fetchrow(
       "INSERT INTO users (username, password, role) VALUES ($1,$2,$3) RETURNING id, username",
-      user.username, user.password, user.role
+      user.username, hashed_password, user.role
     )
 
     return {"id": result["id"], "username": result["username"]}
@@ -124,3 +128,19 @@ async def get_user_events(user_id: int, request: Request):
       """, user_id
     )
     return events
+  
+class LoginRequest(BaseModel):
+  username: str
+  password: str
+  
+@router.post("/login")
+async def login(user: LoginRequest, request: Request):
+  pool = request.app.state.pool
+  async with pool.acquire() as conn:
+    db_user = await conn.fetchrow(
+      "SELECT id, username, password FROM users WHERE username=$1", user.username
+    )
+    if not db_user or not verify_password(user.password, db_user["password"]):
+      raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    return {"detail": "Login succeed"}
