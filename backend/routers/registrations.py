@@ -33,7 +33,7 @@ async def register_event(user_id: int, event_id: int, request: Request):
       raise HTTPException(status_code=400, detail="Event is full")
     
     await conn.execute(
-      "INSERT INTO registration (user_id, event_id) VALUES ($1,$2)", user_id, event_id
+      "INSERT INTO registrations (user_id, event_id) VALUES ($1,$2)", user_id, event_id
     )
     return {"detail": "Registered succesfully"}
   
@@ -57,12 +57,56 @@ async def unregister_event(event_id: int, user_id: int, request: Request, master
       if event_master != master_id:
         raise HTTPException(status_code=403, detail="Not authorized to remove other players")
       
-      await conn.execute(
-        "DELETE FROM registrations WHERE event_id=$1 AND user_id=$2 AND master_id=$3", event_id, user_id, master_id
+      player_username = await conn.fetchval(
+        "SELECT username FROM users WHERE id=$1", user_id
       )
+      
+      await conn.execute(
+        "DELETE FROM registrations WHERE event_id=$1 AND user_id=$2", event_id, user_id,
+      )
+      return {"detail": f"User {player_username} has been unregistered from the event"}
+    
     else:
       await conn.execute(
         "DELETE FROM registrations WHERE event_id=$1 AND user_id=$2", event_id, user_id
       )
 
     return {"detail": "Unregistered succesfully"}
+  
+@router.get("/registrations/{user_id}")
+async def get_user_registrations(user_id: int, request: Request):
+  pool = request.app.state.pool
+  async with pool.acquire() as conn:
+    events = await conn.fetch(
+      """
+      SELECT 
+                events.title, 
+                events.description, 
+                events.date, 
+                events.max_players, 
+                events.created_at, 
+                events.status, 
+                users.username AS master_username,
+                COUNT(r2.user_id) AS player_joined
+            FROM registrations
+            JOIN events ON registrations.event_id = events.id
+            JOIN users ON events.master_id = users.id
+            LEFT JOIN registrations r2 ON r2.event_id = events.id
+            WHERE registrations.user_id = $1
+            GROUP BY events.title, events.description, events.date, 
+                     events.max_players, events.created_at, events.status, users.username
+            """, user_id
+        ) 
+    return [
+            {
+                "title": event["title"],
+                "description": event["description"],
+                "date": event["date"],
+                "max_players": event["max_players"],
+                "created_at": event["created_at"],
+                "status": event["status"],
+                "master_username": event["master_username"],
+                "player_joined": event["player_joined"]
+            }
+            for event in events
+        ]
