@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from utils.security import hash_password, verify_password
+from secrets import token_urlsafe
 
 
 router = APIRouter()
@@ -86,9 +87,9 @@ async def patch_user(user_id: int, body: UpdateUser, request: Request):
       updates["username"] = body.username
     
     if body.password:
-      if body.password == current_user["password"]:
+      if verify_password(body.password, current_user["password"]):
         raise HTTPException(status_code=400, detail="Password is the same as before")
-      updates["password"] = body.password
+      updates["password"] = hash_password(body.password)
 
     if not updates:
       raise HTTPException(status_code=400, detail="No fields to update")
@@ -144,3 +145,26 @@ async def login(user: LoginRequest, request: Request):
       raise HTTPException(status_code=401, detail="Invalid credentials")
     
     return {"detail": "Login succeed"}
+  
+@router.post("/users/{user_id}/reset-password")
+async def reset_user_password(user_id: int, request: Request):
+  pool = request.app.state.pool
+  async with pool.acquire() as conn:
+    user = await conn.fetchrow(
+      "SELECT id FROM users WHERE id=$1", user_id
+    )
+    if not user: 
+      raise HTTPException(status_code=404, detail="User not found")
+    
+    new_password = token_urlsafe(12)[:12]
+
+    hashed_password = hash_password(new_password)
+
+    await conn.execute(
+      "UPDATE users SET password=$1 WHERE id=$2", hashed_password, user_id
+    )
+
+    return {
+      "detail": "Password has been reseted. Please change the password as soon as possible",
+      "temp_password": f"Your temporary password is {new_password}"
+    }
