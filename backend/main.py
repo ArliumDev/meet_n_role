@@ -4,8 +4,6 @@ from database import create_pool
 from routers import users, events, registrations, account
 from middleware.auth import JWTMiddleware
 
-# Startup event. Create pool
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
   app.state.pool = await create_pool()
