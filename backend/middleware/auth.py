@@ -22,7 +22,7 @@ async def jwt_auth(request: Request, call_next):
 
 class JWTMiddleware(BaseHTTPMiddleware):
   async def dispatch(self, request, call_next):
-    if request.url.path in ["/account/sign_in", "account/sign_up", "/docs", "/openapi.json"]:
+    if request.url.path in ["/account/sign_in", "/account/sign_up", "/docs", "/openapi.json"]:
       return await call_next(request)
     
     auth = request.headers.get("Authorization")
@@ -50,7 +50,7 @@ async def get_current_user(request: Request) -> APIUser:
     return APIUser(**payload)
 
 async def require_master(request: Request) -> APIUser:
-    user = get_current_user(request)
+    user = await get_current_user(request)
     if user.role != "master":
         raise HTTPException(status_code=403, detail="Masters only")
     return user

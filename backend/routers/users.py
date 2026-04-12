@@ -18,7 +18,7 @@ async def me(request: Request, user: APIUser = Depends(get_current_user)):
   return user
   
 @router.get("/{user_id}")
-async def get_user(user_id: int, request: Request):
+async def get_user(user_id: int, request: Request, user: APIUser = Depends(get_current_user)):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
     row = await conn.fetchrow(
@@ -35,9 +35,13 @@ async def get_user(user_id: int, request: Request):
     }
 
 @router.delete("/{user_id}")
-async def del_user(user_id: int, request: Request):
+async def del_user(user_id: int, request: Request, user: APIUser = Depends(get_current_user)):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
+
+    if user_id != user.user_id:
+      raise HTTPException(status_code=403, detail="Permission denied. You can only delete your own account")
+  
     target = await conn.fetchrow(
       "DELETE FROM users WHERE id=$1 RETURNING id, username", user_id
     )
@@ -52,9 +56,13 @@ class UpdateUser(BaseModel):
   password: str | None = None
 
 @router.patch("/{user_id}")
-async def patch_user(user_id: int, body: UpdateUser, request: Request):
+async def patch_user(user_id: int, body: UpdateUser, request: Request, user: APIUser = Depends(get_current_user)):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
+
+    if user_id != user.user_id:
+      raise HTTPException(status_code=403, detail="Permission denied. You can only edit your own profile")
+    
     current_user = await conn.fetchrow(
       "SELECT id, username, password FROM users where id=$1", user_id
     )
@@ -97,7 +105,7 @@ async def patch_user(user_id: int, body: UpdateUser, request: Request):
     }
   
 @router.get("/{user_id}/events")
-async def get_user_events(user_id: int, request: Request):
+async def get_user_events(user_id: int, request: Request, user: APIUser = Depends(get_current_user)):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
     events = await conn.fetch(
@@ -115,10 +123,14 @@ async def get_user_events(user_id: int, request: Request):
     )
     return events
     
-@router.post("/{user_id}/reset-password")
-async def reset_user_password(user_id: int, request: Request):
+@router.post("/{user_id}/reset_password")
+async def reset_user_password(user_id: int, request: Request, user: APIUser = Depends(get_current_user)):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
+
+    if user_id != user.user_id:
+      raise HTTPException(status_code=403, detail="Permision denied. You can only delete your own account")
+    
     user = await conn.fetchrow(
       "SELECT id FROM users WHERE id=$1", user_id
     )

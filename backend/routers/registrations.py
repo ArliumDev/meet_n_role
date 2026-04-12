@@ -1,12 +1,15 @@
-from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, Request, Depends
+from middleware.auth import get_current_user, APIUser
 
 router = APIRouter()
 
 @router.post("/register_to_game")
-async def register_event(user_id: int, event_id: int, request: Request):
+async def register_event(user_id: int, event_id: int, request: Request, user: APIUser = Depends(get_current_user)):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
+    if user_id != user.user_id:
+      raise HTTPException(status_code=403, detail="Permission denied. You can only register yourself")
+    
     user = await conn.fetchrow(
       "SELECT id FROM users WHERE id=$1", user_id)
     if not user:
@@ -38,7 +41,7 @@ async def register_event(user_id: int, event_id: int, request: Request):
     return {"detail": "Registered succesfully"}
   
 @router.delete("/{event_id}/{user_id}")
-async def unregister_event(event_id: int, user_id: int, request: Request, master_id: int | None = None):
+async def unregister_event(event_id: int, user_id: int, request: Request, user: APIUser = Depends(get_current_user)):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
 
@@ -48,35 +51,38 @@ async def unregister_event(event_id: int, user_id: int, request: Request, master
     if not existing:
       raise HTTPException(status_code=404, detail="Registration not found")
     
-    if master_id is not None:
-      event_master = await conn.fetchval(
-        "SELECT master_id FROM events WHERE id=$1", event_id
-      )
-      if not event_master:
-        raise HTTPException(status_code=404, detail="Event not found")
-      if event_master != master_id:
-        raise HTTPException(status_code=403, detail="Not authorized to remove other players")
-      
-      player_username = await conn.fetchval(
-        "SELECT username FROM users WHERE id=$1", user_id
-      )
-      
-      await conn.execute(
-        "DELETE FROM registrations WHERE event_id=$1 AND user_id=$2", event_id, user_id,
-      )
-      return {"detail": f"User {player_username} has been unregistered from the event"}
-    
-    else:
+    if user_id == user.user_id:
       await conn.execute(
         "DELETE FROM registrations WHERE event_id=$1 AND user_id=$2", event_id, user_id
       )
-
-    return {"detail": "Unregistered succesfully"}
+      return {"detail": "Unregistered succesfully"}
+    
+    event_master_id = await conn.fetchval(
+      "SELECT master_id FROM events WHERE id=$1", event_id
+    )
+    if not event_master_id:
+      raise HTTPException(status_code=404, detail="Event not found")
+    
+    if event_master_id != user.user_id:
+      raise HTTPException(status_code=403, detail="Not authorized to remove other players")
+    
+    player_username = await conn.fetchval(
+      "SELECT username FROM users WHERE id=$1", user_id
+    )
+    
+    await conn.execute(
+      "DELETE FROM registrations WHERE event_id=$1 AND user_id=$2", event_id, user_id
+    )
+    return {"detail": f"User {player_username} has been unregistered from the event"}
+    
+    
   
 @router.get("/{user_id}")
-async def get_user_registrations(user_id: int, request: Request):
+async def get_user_registrations(user_id: int, request: Request, user: APIUser = Depends(get_current_user)):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
+    if user_id != user.user_id:
+      raise HTTPException(status_code=403, detail="Permission denied. You can only see your own registrations")
     events = await conn.fetch(
       """
       SELECT 
