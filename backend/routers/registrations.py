@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 router = APIRouter()
 
-@router.post("/registrations")
+@router.post("/register_to_game")
 async def register_event(user_id: int, event_id: int, request: Request):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
@@ -37,7 +37,7 @@ async def register_event(user_id: int, event_id: int, request: Request):
     )
     return {"detail": "Registered succesfully"}
   
-@router.delete("/registrations/{event_id}/{user_id}")
+@router.delete("/{event_id}/{user_id}")
 async def unregister_event(event_id: int, user_id: int, request: Request, master_id: int | None = None):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
@@ -73,7 +73,7 @@ async def unregister_event(event_id: int, user_id: int, request: Request, master
 
     return {"detail": "Unregistered succesfully"}
   
-@router.get("/registrations/{user_id}")
+@router.get("/{user_id}")
 async def get_user_registrations(user_id: int, request: Request):
   pool = request.app.state.pool
   async with pool.acquire() as conn:

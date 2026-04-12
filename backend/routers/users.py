@@ -1,39 +1,23 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Depends
 from pydantic import BaseModel
 from utils.security import hash_password, verify_password
 from utils.jwt import create_token, verify_token
 from secrets import token_urlsafe
+from middleware.auth import get_current_user, APIUser
 
 
 router = APIRouter()
 
-class CreateUser(BaseModel):
+class User(BaseModel):
   username: str
   password: str
   role: str = "player"
 
-@router.post("/users")
-async def create_user(user: CreateUser, request: Request):
-  pool = request.app.state.pool
-  async with pool.acquire() as conn:
-
-    existing = await conn.fetchrow(
-      "SELECT id FROM users WHERE username=$1", user.username
-    )
-
-    if existing:
-      raise HTTPException(status_code=409, detail="Username already exists")
-    
-    hashed_password = hash_password(user.password) 
-
-    result = await conn.fetchrow(
-      "INSERT INTO users (username, password, role) VALUES ($1,$2,$3) RETURNING id, username",
-      user.username, hashed_password, user.role
-    )
-
-    return {"id": result["id"], "username": result["username"]}
+@router.get("/me")
+async def me(request: Request, user: APIUser = Depends(get_current_user)):
+  return user
   
-@router.get("/users/{user_id}")
+@router.get("/{user_id}")
 async def get_user(user_id: int, request: Request):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
@@ -50,7 +34,7 @@ async def get_user(user_id: int, request: Request):
       "role": row["role"]
     }
 
-@router.delete("/users/{user_id}")
+@router.delete("/{user_id}")
 async def del_user(user_id: int, request: Request):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
@@ -67,7 +51,7 @@ class UpdateUser(BaseModel):
   username: str | None = None
   password: str | None = None
 
-@router.patch("/users/{user_id}")
+@router.patch("/{user_id}")
 async def patch_user(user_id: int, body: UpdateUser, request: Request):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
@@ -112,7 +96,7 @@ async def patch_user(user_id: int, body: UpdateUser, request: Request):
       "username": updated["username"],
     }
   
-@router.get("/users/{user_id}/events")
+@router.get("/{user_id}/events")
 async def get_user_events(user_id: int, request: Request):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
@@ -130,27 +114,8 @@ async def get_user_events(user_id: int, request: Request):
       """, user_id
     )
     return events
-  
-class LoginRequest(BaseModel):
-  username: str
-  password: str
-  
-@router.post("/login")
-async def login(user: LoginRequest, request: Request):
-  pool = request.app.state.pool
-  async with pool.acquire() as conn:
-    db_user = await conn.fetchrow(
-      "SELECT id, username, password FROM users WHERE username=$1", user.username
-    )
-    if not db_user or not verify_password(user.password, db_user["password"]):
-      raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    payload = {"user_id": db_user["id"], "username": db_user["username"]}
-    token = create_token(payload)
-    
-    return {"detail": "Login succeed", "access-token": token, "token-type": "bearer"}
-  
-@router.post("/users/{user_id}/reset-password")
+@router.post("/{user_id}/reset-password")
 async def reset_user_password(user_id: int, request: Request):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
@@ -172,4 +137,3 @@ async def reset_user_password(user_id: int, request: Request):
       "detail": "Password has been reseted. Please change the password as soon as possible",
       "temp_password": f"Your temporary password is {new_password}"
     }
-  

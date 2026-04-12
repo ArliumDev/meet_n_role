@@ -5,7 +5,7 @@ from enum import Enum
 
 router = APIRouter()
 
-@router.get("/events")
+@router.get("/get_all")
 async def get_events_global(request: Request):
     pool = request.app.state.pool
     async with pool.acquire() as conn:
@@ -21,7 +21,7 @@ async def get_events_global(request: Request):
         )
         return events
   
-@router.get("/events/{event_id}")
+@router.get("/{event_id}")
 async def get_event_info(event_id: int, request: Request):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
@@ -47,7 +47,7 @@ class CreateEvent(BaseModel):
   master_id: int
   max_players: int
 
-@router.post("/events")
+@router.post("/create_event")
 async def create_event(event: CreateEvent, request: Request):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
@@ -75,7 +75,7 @@ class UpdateEvent(BaseModel):
   max_players: int | None = None
   status: EventStatus | None = None
 
-@router.patch("/events/{event_id}")
+@router.patch("/{event_id}")
 async def patch_event(event_id: int, master_id: int, body: UpdateEvent, request: Request):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
@@ -118,7 +118,7 @@ async def patch_event(event_id: int, master_id: int, body: UpdateEvent, request:
       "status": updated["status"]
     }
 
-@router.delete("/events/{event_id}")
+@router.delete("/{event_id}")
 async def del_event(event_id: int, master_id: int, request: Request):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
@@ -140,7 +140,7 @@ async def del_event(event_id: int, master_id: int, request: Request):
 
     return {"detail": "Event has been deleted", "event": target}
   
-@router.get("/events/{event_id}/players")
+@router.get("/{event_id}/players")
 async def get_events_players(event_id: int, request: Request):
   pool =  request.app.state.pool
   async with pool.acquire() as conn:
