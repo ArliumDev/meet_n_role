@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Request, Depends
 from pydantic import BaseModel
 from datetime import datetime
 from enum import Enum
-from middleware.auth import get_current_user, require_master, APIUser
+from middleware.auth import get_current_user, APIUser
 
 router = APIRouter()
 
@@ -48,7 +48,7 @@ class CreateEvent(BaseModel):
   max_players: int
 
 @router.post("/create_event")
-async def create_event(event: CreateEvent, request: Request, user: APIUser = Depends(require_master)):
+async def create_event(event: CreateEvent, request: Request, user: APIUser = Depends(get_current_user)):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
     
@@ -71,7 +71,7 @@ class UpdateEvent(BaseModel):
   status: EventStatus | None = None
 
 @router.patch("/{event_id}")
-async def patch_event(event_id: int, body: UpdateEvent, request: Request, user: APIUser = Depends(require_master)):
+async def patch_event(event_id: int, body: UpdateEvent, request: Request, user: APIUser = Depends(get_current_user)):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
     existing = await conn.fetchrow(
@@ -110,7 +110,7 @@ async def patch_event(event_id: int, body: UpdateEvent, request: Request, user: 
     }
 
 @router.delete("/{event_id}")
-async def del_event(event_id: int, request: Request, user: APIUser = Depends(require_master)):
+async def del_event(event_id: int, request: Request, user: APIUser = Depends(get_current_user)):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
     existing = await conn.fetchrow(

@@ -8,7 +8,6 @@ router = APIRouter()
 class User(BaseModel):
   username: str
   password: str
-  role: str = "player"
 
 @router.post("/sign_up")
 async def create_user(user: User, request: Request):
@@ -25,21 +24,17 @@ async def create_user(user: User, request: Request):
     hashed_password = hash_password(user.password)
 
     result = await conn.fetchrow(
-      "INSERT INTO users (username, password, role) VALUES ($1,$2,$3) RETURNING id, username", user.username, hashed_password, user.role
+      "INSERT INTO users (username, password) VALUES ($1,$2) RETURNING id, username", user.username, hashed_password
     )
 
     return {"id": result["id"], "username": result["username"]}
-  
-class LoginRequest(BaseModel):
-  username: str
-  password: str
 
 @router.post("/sign_in")
-async def login(user: LoginRequest, request: Request):
+async def login(user: User, request: Request):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
     row = await conn.fetchrow(
-      "SELECT id, username, password, role FROM users WHERE username=$1", user.username
+      "SELECT id, username, password FROM users WHERE username=$1", user.username
     )
 
     if not row or not verify_password(user.password, row['password']):
@@ -48,7 +43,6 @@ async def login(user: LoginRequest, request: Request):
     payload = {
       "user_id": row["id"],
       "username": row["username"],
-      "role": row["role"]
     }
 
     token = create_token(payload)
