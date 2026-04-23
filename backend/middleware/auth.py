@@ -5,6 +5,8 @@ from pydantic import BaseModel
 
 class JWTMiddleware(BaseHTTPMiddleware):
   async def dispatch(self, request, call_next):
+    if request.method == "OPTIONS":
+       return await call_next(request)
     if request.url.path in ["/account/sign_in", "/account/sign_up", "/docs", "/openapi.json"]:
       return await call_next(request)
     
