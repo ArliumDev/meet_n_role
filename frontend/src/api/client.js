@@ -27,11 +27,14 @@ async function request(method, path, body = null, auth = true) {
 
 // /users API calls
 
-export const sigIn = (username, password) => request('POST', '/account/sign_in', { username, password }, false);
+export const signIn = (username, password) => request('POST', '/account/sign_in', { username, password }, false);
 
 export const signUp = (username, password) => request('POST', '/account/sign_up', { username, password }, false);
 
-export const getMe = () => request('GET', '/users/me', null, true);
+export const getMe = () => {
+  console.log('Token en localStorage:', localStorage.getItem('token'));
+  return request('GET', '/users/me', null, true);
+}
 
 export const getUser = (user_id) => request('GET', `/users/${user_id}`, null, true);
 
