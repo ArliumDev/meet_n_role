@@ -3,20 +3,12 @@ from middleware.auth import get_current_user, APIUser
 
 router = APIRouter()
 
-@router.post("/register_to_game")
-async def register_event(user_id: int, event_id: int, request: Request, user: APIUser = Depends(get_current_user)):
+@router.post("/{event_id}/register")
+async def register_to_game(event_id: int, request: Request, user: APIUser = Depends(get_current_user)):
   pool = request.app.state.pool
-  async with pool.acquire() as conn:
-    if user_id != user.user_id:
-      raise HTTPException(status_code=403, detail="Permission denied. You can only register yourself")
-    
-    user = await conn.fetchrow(
-      "SELECT id FROM users WHERE id=$1", user_id)
-    if not user:
-      raise HTTPException(status_code=404, detail="User not found")
-    
+  async with pool.acquire as conn:
     event = await conn.fetchrow(
-      "SELECT id, max_players, status FROM events WHERE id=$1", event_id
+      "SELECT id, max_players, status FROM events where id=$1", event_id
     )
     if not event:
       raise HTTPException(status_code=404, detail="Event not found")
@@ -24,68 +16,45 @@ async def register_event(user_id: int, event_id: int, request: Request, user: AP
       raise HTTPException(status_code=400, detail="Event not open for registration")
     
     existing = await conn.fetchrow(
-      "SELECT id FROM registrations WHERE user_id=$1 AND event_id=$2", user_id, event_id
+      "SELECT id FROM registrations WHERE user_id=$1 AND event_id=$2", user.user_id, event_id
     )
     if existing:
       raise HTTPException(status_code=400, detail="Already registered")
     
     players_count = await conn.fetchval(
-      "SELECT COUNT(*) FROM registrations WHERE event_id=$1", event_id
+      "SELECT COUNT(+) FROM registrations WHERE event_id=$1", event_id
     )
     if players_count >= event["max_players"]:
       raise HTTPException(status_code=400, detail="Event is full")
     
     await conn.execute(
-      "INSERT INTO registrations (user_id, event_id) VALUES ($1,$2)", user_id, event_id
+      "INSERT INTO registrations (user_id, event_id) VALUES ($1,$2)", user.user_id, event_id
     )
-    return {"detail": "Registered succesfully"}
+    return {"detail": "Registered successfully"}
   
-@router.delete("/{event_id}/{user_id}")
-async def unregister_event(event_id: int, user_id: int, request: Request, user: APIUser = Depends(get_current_user)):
+@router.delete("/{event_id}/unregister")
+async def leave_game(event_id: int, request: Request, user: APIUser = Depends(get_current_user)):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
-
     existing = await conn.fetchrow(
-      "SELECT id FROM registrations WHERE event_id=$1 AND user_id=$2", event_id, user_id
+      "SELECT id FROM registrations WHERE event_id=$1 AND user_id=$2", event_id, user.user_id
     )
     if not existing:
       raise HTTPException(status_code=404, detail="Registration not found")
     
-    if user_id == user.user_id:
-      await conn.execute(
-        "DELETE FROM registrations WHERE event_id=$1 AND user_id=$2", event_id, user_id
-      )
-      return {"detail": "Unregistered succesfully"}
-    
-    event_master_id = await conn.fetchval(
-      "SELECT master_id FROM events WHERE id=$1", event_id
-    )
-    if not event_master_id:
-      raise HTTPException(status_code=404, detail="Event not found")
-    
-    if event_master_id != user.user_id:
-      raise HTTPException(status_code=403, detail="Not authorized to remove other players")
-    
-    player_username = await conn.fetchval(
-      "SELECT username FROM users WHERE id=$1", user_id
-    )
-    
     await conn.execute(
-      "DELETE FROM registrations WHERE event_id=$1 AND user_id=$2", event_id, user_id
+      "DELETE FROM registrations WHERE event_id=$1 AND user_id=$2", event_id, user.user_id
     )
-    return {"detail": f"User {player_username} has been unregistered from the event"}
-    
-    
+    return {"detail": "Unregistered successfully"}
   
-@router.get("/{user_id}")
-async def get_user_registrations(user_id: int, request: Request, user: APIUser = Depends(get_current_user)):
-  pool = request.app.state.pool
-  async with pool.acquire() as conn:
-    if user_id != user.user_id:
-      raise HTTPException(status_code=403, detail="Permission denied. You can only see your own registrations")
-    events = await conn.fetch(
-      """
-      SELECT 
+@router.get("/me")
+async def get_my_registrations(request: Request, user: APIUser = Depends(get_current_user)):
+    pool = request.app.state.pool
+    async with pool.acquire() as conn:
+        events = await conn.fetch(
+            """
+            SELECT 
+                events.id,
                 events.title, 
                 events.description, 
                 events.date, 
@@ -99,12 +68,13 @@ async def get_user_registrations(user_id: int, request: Request, user: APIUser =
             JOIN users ON events.master_id = users.id
             LEFT JOIN registrations r2 ON r2.event_id = events.id
             WHERE registrations.user_id = $1
-            GROUP BY events.title, events.description, events.date, 
+            GROUP BY events.id, events.title, events.description, events.date, 
                      events.max_players, events.created_at, events.status, users.username
-            """, user_id
+            """, user.user_id
         ) 
-    return [
+        return [
             {
+                "id": event["id"],
                 "title": event["title"],
                 "description": event["description"],
                 "date": event["date"],

@@ -19,6 +19,7 @@ frontend/.env
 # -----------------
 docker-compose.override.yml
 *.log
+.env
 
 # -----------------
 # VSCode / Linux

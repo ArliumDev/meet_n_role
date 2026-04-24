@@ -8,11 +8,6 @@ from middleware.auth import get_current_user, APIUser
 
 router = APIRouter()
 
-class User(BaseModel):
-  username: str
-  password: str
-  role: str = "player"
-
 @router.get("/me")
 async def me(request: Request, user: APIUser = Depends(get_current_user)):
   return user
@@ -22,7 +17,7 @@ async def get_user(user_id: int, request: Request, user: APIUser = Depends(get_c
   pool = request.app.state.pool
   async with pool.acquire() as conn:
     row = await conn.fetchrow(
-      "SELECT id, username, role FROM users WHERE id=$1", user_id
+      "SELECT id, username FROM users WHERE id=$1", user_id
     )
 
     if not row:
@@ -31,7 +26,6 @@ async def get_user(user_id: int, request: Request, user: APIUser = Depends(get_c
     return {
       "id": row["id"],
       "username": row["username"],
-      "role": row["role"]
     }
 
 @router.delete("/{user_id}")
