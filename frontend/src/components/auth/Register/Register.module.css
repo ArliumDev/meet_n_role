@@ -4,7 +4,10 @@
   align-items: center;
   min-height: 100vh;
   background: linear-gradient(135deg, #1a1a2e, #16213e);
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
 }
 
 .form {
@@ -79,7 +82,9 @@
   font-size: 1rem;
   font-weight: bold;
   cursor: pointer;
-  transition: background 0.2s, transform 0.1s;
+  transition:
+    background 0.2s,
+    transform 0.1s;
 }
 
 .button:hover:not(:disabled) {
