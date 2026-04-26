@@ -16,27 +16,38 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const savedToken = localStorage.getItem('token');
     if (savedToken) {
-      setToken(savedToken);
-    }
-    setLoading(false);
+      const persistUser = async () => {
+        try {
+          const userData = await getMe();
+          setUser(userData);
+          setToken(savedToken);
+        } catch (err) {
+          localStorage.removeItem('token');
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+      persistUser();
+    } else setLoading(false);
   }, []);
 
-const login = async (username, password) => {
-  setLoading(true);
-  setError(null);
-  try {
-    const { token } = await signIn(username, password);
-    setToken(token);
-    localStorage.setItem('token', token);
-    const data = await getMe();
-    setUser(data);
-    console.log('User guardado en contexto:', data);
-  } catch (err) {
-    setError(err.message || 'Error al iniciar sesión');
-  } finally {
-    setLoading(false);
-  }
-};
+  const login = async (username, password) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { token } = await signIn(username, password);
+      setToken(token);
+      localStorage.setItem('token', token);
+      const data = await getMe();
+      setUser(data);
+      console.log('User guardado en contexto:', data);
+    } catch (err) {
+      setError(err.message || 'Error al iniciar sesión');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const register = async (username, password) => {
     setLoading(true);
@@ -57,7 +68,7 @@ const login = async (username, password) => {
     setUser(null);
     localStorage.removeItem('token');
     setError(null);
-  }
+  };
 
   const value = {
     token,
@@ -66,7 +77,7 @@ const login = async (username, password) => {
     error,
     login,
     register,
-    logout
+    logout,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
