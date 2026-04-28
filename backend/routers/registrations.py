@@ -6,7 +6,7 @@ router = APIRouter()
 @router.post("/{event_id}/register")
 async def register_to_game(event_id: int, request: Request, user: APIUser = Depends(get_current_user)):
   pool = request.app.state.pool
-  async with pool.acquire as conn:
+  async with pool.acquire() as conn:
     event = await conn.fetchrow(
       "SELECT id, max_players, status FROM events where id=$1", event_id
     )
