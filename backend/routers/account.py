@@ -24,7 +24,7 @@ async def create_user(user: User, request: Request):
     hashed_password = hash_password(user.password)
 
     result = await conn.fetchrow(
-      "INSERT INTO users (username, password) VALUES ($1,$2) RETURNING id, username", user.username, hashed_password
+      "INSERT INTO users (username, password, app_role) VALUES ($1,$2, 'user') RETURNING id, username", user.username, hashed_password
     )
 
     return {"id": result["id"], "username": result["username"]}
@@ -43,6 +43,7 @@ async def login(user: User, request: Request):
     payload = {
       "user_id": row["id"],
       "username": row["username"],
+      "app_role": row["app_role"]
     }
 
     token = create_token(payload)
