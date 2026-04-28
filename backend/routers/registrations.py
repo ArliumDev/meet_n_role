@@ -22,7 +22,7 @@ async def register_to_game(event_id: int, request: Request, user: APIUser = Depe
       raise HTTPException(status_code=400, detail="Already registered")
     
     players_count = await conn.fetchval(
-      "SELECT COUNT(+) FROM registrations WHERE event_id=$1", event_id
+      "SELECT COUNT(*) FROM registrations WHERE event_id=$1", event_id
     )
     if players_count >= event["max_players"]:
       raise HTTPException(status_code=400, detail="Event is full")
