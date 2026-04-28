@@ -90,10 +90,3 @@
   font-size: 0.85rem;
   opacity: 0.8;
 }
-
-.loading, .error, .noEvents {
-  text-align: center;
-  color: white;
-  font-size: 1.2rem;
-  margin-top: 2rem;
-}
