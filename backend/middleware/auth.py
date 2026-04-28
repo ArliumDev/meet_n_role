@@ -26,6 +26,7 @@ class JWTMiddleware(BaseHTTPMiddleware):
 class APIUser(BaseModel):
     user_id: int
     username: str
+    app_role: str
 
 async def get_current_user(request: Request) -> APIUser:
     if not hasattr(request.state, 'user'):
