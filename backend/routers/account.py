@@ -34,7 +34,7 @@ async def login(user: User, request: Request):
   pool = request.app.state.pool
   async with pool.acquire() as conn:
     row = await conn.fetchrow(
-      "SELECT id, username, password FROM users WHERE username=$1", user.username
+      "SELECT id, username, password, app_role FROM users WHERE username=$1", user.username
     )
 
     if not row or not verify_password(user.password, row['password']):
