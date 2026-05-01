@@ -1,0 +1,90 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #1a1a2e;
+  padding: 2rem;
+  border-radius: 1rem;
+  width: 90%;
+  max-width: 500px;
+  color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.modal h2 {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.modal label {
+  display: block;
+  margin-top: 1rem;
+  font-weight: bold;
+}
+
+.modal input, .modal textarea, .modal select {
+  width: 100%;
+  padding: 0.5rem;
+  margin-top: 0.25rem;
+  border-radius: 0.5rem;
+  border: none;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.actions button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.actions button[type="button"] {
+  background: #ccc;
+  color: black;
+}
+
+.actions button[type="submit"] {
+  background: #00b4d8;
+  color: white;
+}
+
+.error {
+  background: #dc2f02;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.deleteButton {
+  background: #dc2f02;
+  border: none;
+  border-radius: 0.5rem;
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  margin-left: 0.5rem;
+  padding: 0.3rem 0.8rem;
+  transition: background 0.2s;
+}
+
+.deleteButton:hover {
+  background: #b91c00;
+}
