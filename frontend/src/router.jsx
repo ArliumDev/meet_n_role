@@ -4,43 +4,43 @@ import Login from './components/auth/Login/Login';
 import Register from './components/auth/Register/Register';
 import EventList from './components/events/EventList/EventList';
 import MyRegistrations from './components/registrations/MyRegistrations/MyRegistrations';
-// import CreateEventForm from './components/events/CreateEventForm'; // cuando lo tengas
+import CreateEventForm from './components/events/CreateEventForm/CreateEventForm'; // cuando lo tengas
 
 export const router = createBrowserRouter([
-    {
-        path: '/',
-        element: <Navigate to="/events" replace />,
-    },
-    {
-        path: '/login',
-        element: <Login />,
-    },
-    {
-        path: '/register',
-        element: <Register />,
-    },
-    {
-        path: '/events',
-        element: (
-            <ProtectedRoute>
-                <EventList />
-            </ProtectedRoute>
-        ),
-    },
-    {
-        path: '/my-registrations',
-        element: (
-            <ProtectedRoute>
-                <MyRegistrations />
-            </ProtectedRoute>
-        ),
-    },
-    {
-        path: '/events/create',
-        element: (
-            <ProtectedRoute>
-                <div>Formulario de creación (próximamente)</div>
-            </ProtectedRoute>
-        ),
-    },
+  {
+    path: '/',
+    element: <Navigate to="/events" replace />,
+  },
+  {
+    path: '/login',
+    element: <Login />,
+  },
+  {
+    path: '/register',
+    element: <Register />,
+  },
+  {
+    path: '/events',
+    element: (
+      <ProtectedRoute>
+        <EventList />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/my-registrations',
+    element: (
+      <ProtectedRoute>
+        <MyRegistrations />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/events/create',
+    element: (
+      <ProtectedRoute>
+        <CreateEventForm />
+      </ProtectedRoute>
+    ),
+  },
 ]);

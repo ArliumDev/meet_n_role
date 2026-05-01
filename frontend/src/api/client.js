@@ -34,7 +34,7 @@ export const signUp = (username, password) => request('POST', '/account/sign_up'
 export const getMe = () => {
   console.log('Token en localStorage:', localStorage.getItem('token'));
   return request('GET', '/users/me', null, true);
-}
+};
 
 export const getUser = (user_id) => request('GET', `/users/${user_id}`, null, true);
 
@@ -57,15 +57,14 @@ export const getEventPlayers = (event_id) => request('GET', `/events/${event_id}
 
 export const createEvent = (title, description, date, max_players) => request('POST', '/events/create_event', { title, description, date, max_players }, true);
 
+export const updateEvent = (event_id, updatedFields) => request('PATCH', `/events/${event_id}`, updatedFields, true);
+
 export const deleteEvent = (event_id) => request('DELETE', `/events/${event_id}`, null, true);
 
 // /registrations API calls
 
-export const getMyRegistrations = () => 
-  request('GET', '/registrations/me', null, true)
+export const getMyRegistrations = () => request('GET', '/registrations/me', null, true);
 
-export const registerToGame = (event_id) =>
-  request('POST', `/registrations/${event_id}/register`, null, true)
+export const registerToGame = (event_id) => request('POST', `/registrations/${event_id}/register`, null, true);
 
-export const leaveGame = (event_id) =>
-  request('DELETE', `/registrations/${event_id}/unregister`, null, true);
+export const leaveGame = (event_id) => request('DELETE', `/registrations/${event_id}/unregister`, null, true);

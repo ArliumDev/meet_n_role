@@ -53,23 +53,41 @@ async def get_my_registrations(request: Request, user: APIUser = Depends(get_cur
     async with pool.acquire() as conn:
         events = await conn.fetch(
             """
-            SELECT 
-                events.id,
-                events.title, 
-                events.description, 
-                events.date, 
-                events.max_players, 
-                events.created_at, 
-                events.status, 
-                users.username AS master_username,
-                COUNT(r2.user_id) AS player_joined
-            FROM registrations
-            JOIN events ON registrations.event_id = events.id
-            JOIN users ON events.master_id = users.id
-            LEFT JOIN registrations r2 ON r2.event_id = events.id
-            WHERE registrations.user_id = $1
-            GROUP BY events.id, events.title, events.description, events.date, 
-                     events.max_players, events.created_at, events.status, users.username
+            (
+                SELECT 
+                    events.id,
+                    events.title,
+                    events.description,
+                    events.date,
+                    events.max_players,
+                    events.created_at,
+                    events.status,
+                    events.master_id,
+                    users.username AS master_username,
+                    (SELECT COUNT(*) FROM registrations r2 WHERE r2.event_id = events.id) AS player_joined
+                FROM registrations
+                JOIN events ON registrations.event_id = events.id
+                JOIN users ON events.master_id = users.id
+                WHERE registrations.user_id = $1
+            )
+            UNION
+            (
+                SELECT 
+                    events.id,
+                    events.title,
+                    events.description,
+                    events.date,
+                    events.max_players,
+                    events.created_at,
+                    events.status,
+                    events.master_id,
+                    users.username AS master_username,
+                    (SELECT COUNT(*) FROM registrations r2 WHERE r2.event_id = events.id) AS player_joined
+                FROM events
+                JOIN users ON events.master_id = users.id
+                WHERE events.master_id = $1
+            )
+            ORDER BY date DESC
             """, user.user_id
         ) 
         return [
@@ -82,7 +100,8 @@ async def get_my_registrations(request: Request, user: APIUser = Depends(get_cur
                 "created_at": event["created_at"],
                 "status": event["status"],
                 "master_username": event["master_username"],
-                "player_joined": event["player_joined"]
+                "player_joined": event["player_joined"],
+                "master_id": event["master_id"]
             }
             for event in events
         ]
