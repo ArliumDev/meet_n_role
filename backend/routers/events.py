@@ -7,20 +7,38 @@ from middleware.auth import get_current_user, APIUser
 router = APIRouter()
 
 @router.get("/get_all")
-async def get_events_global(request: Request, user: APIUser = Depends(get_current_user) ):
+async def get_events_global(request: Request, user: APIUser = Depends(get_current_user)):
     pool = request.app.state.pool
     async with pool.acquire() as conn:
         events = await conn.fetch(
             """
-            SELECT events.id, events.title, events.description, events.date, events.max_players, events.created_at, events.status, users.username AS master_username,
-            COUNT(registrations.user_id) AS player_joined
+            SELECT events.id, events.title, events.description, events.date, 
+                   events.max_players, events.created_at, events.status, 
+                   events.master_id,
+                   users.username AS master_username,
+                   COUNT(registrations.user_id) AS player_joined
             FROM events
             JOIN users ON events.master_id = users.id
             LEFT JOIN registrations ON registrations.event_id = events.id
-            GROUP BY events.id, users.username
+            GROUP BY events.id, users.username, events.master_id
             """
         )
-        return events
+        # Convertir a lista de diccionarios incluyendo master_id
+        return [
+            {
+                "id": event["id"],
+                "title": event["title"],
+                "description": event["description"],
+                "date": event["date"],
+                "max_players": event["max_players"],
+                "created_at": event["created_at"],
+                "status": event["status"],
+                "master_username": event["master_username"],
+                "player_joined": event["player_joined"],
+                "master_id": event["master_id"]   # ← añadido
+            }
+            for event in events
+        ]
   
 @router.get("/{event_id}")
 async def get_event_info(event_id: int, request: Request, user: APIUser = Depends(get_current_user)):
