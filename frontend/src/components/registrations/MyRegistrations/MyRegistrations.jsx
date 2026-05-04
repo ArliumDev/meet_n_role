@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
-import { getMyRegistrations, deleteEvent } from '../../../api/client';
+import { getMyRegistrations, deleteEvent, leaveGame } from '../../../api/client';
 import EditEventModal from '../../events/EditEventModal/EditEventModal';
 import styles from './MyRegistrations.module.css';
 
@@ -45,6 +45,17 @@ function MyRegistrations() {
     }
   };
 
+  const handleLeaveClick = async (event) => {
+    if (window.confirm(`¿Salir de la partida "${event.title}"?`)) {
+      try {
+        await leaveGame(event.id);
+        refreshList();
+      } catch (err) {
+        alert('Error al salir: ' + err.message);
+      }
+    }
+  };
+
   if (loading) return <div className={styles.loading}>Cargando tus partidas...</div>;
   if (error) return <div className={styles.error}>Error: {error}</div>;
 
@@ -67,9 +78,21 @@ function MyRegistrations() {
                 🎲 Master: <span className={styles.master}>{event.master_username}</span>
               </p>
               <p>
-                📌 Estado: <span className={`${styles.status} ${event.status === 'open' ? styles.statusOpen : event.status === 'closed' ? styles.statusClosed : styles.statusCancelled}`}>{event.status}</span>
+                📌 Estado:{' '}
+                <span
+                  className={`${styles.status} ${
+                    event.status === 'open'
+                      ? styles.statusOpen
+                      : event.status === 'closed'
+                      ? styles.statusClosed
+                      : styles.statusCancelled
+                  }`}
+                >
+                  {event.status}
+                </span>
               </p>
-              {/* Botones solo para el master */}
+
+              {/* Botones para el máster */}
               {user && user.user_id === event.master_id && (
                 <div className={styles.buttonGroup}>
                   <button className={styles.editButton} onClick={() => handleEditClick(event)}>
@@ -79,6 +102,13 @@ function MyRegistrations() {
                     🗑️ Eliminar
                   </button>
                 </div>
+              )}
+
+              {/* Botón "Salir de la partida" solo para jugadores (no máster) */}
+              {user && user.user_id !== event.master_id && (
+                <button className={styles.leaveButton} onClick={() => handleLeaveClick(event)}>
+                  🚪 Salir de la partida
+                </button>
               )}
             </div>
           ))}

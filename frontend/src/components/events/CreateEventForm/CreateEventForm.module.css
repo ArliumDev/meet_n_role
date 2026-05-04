@@ -1,69 +1,69 @@
 .container {
-  max-width: 600px;
+  max-width: 800px;
   margin: 2rem auto;
+  background: rgba(44, 26, 14, 0.9);
+  border: 2px solid var(--gold);
+  border-radius: 32px;
   padding: 2rem;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 1rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
 }
 
 .form h2 {
+  color: var(--gold);
   text-align: center;
-  color: white;
-  margin-bottom: 1.5rem;
+  font-family: 'MedievalSharp', cursive;
+  margin-bottom: 2rem;
+  font-size: 2rem;
 }
 
-.input, .textarea, .date, .maxPlayers {
+.input, .textarea {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #fff8ed;
+  border: 1px solid var(--wood-light);
+  border-radius: 32px;
+  font-family: 'Cinzel', serif;
   margin-bottom: 1rem;
-  border: none;
-  border-radius: 0.5rem;
-  background: rgba(255, 255, 255, 0.9);
-  font-size: 1rem;
-  box-sizing: border-box;
-  color: black;
 }
 
 .textarea {
+  border-radius: 24px;
   resize: vertical;
   min-height: 100px;
-}
-
-.input:focus, .textarea:focus, .date:focus, .maxPlayers:focus {
-  outline: none;
-  background: white;
-  box-shadow: 0 0 0 2px #00b4d8;
 }
 
 .button {
   width: 100%;
   padding: 0.75rem;
-  background: #00b4d8;
-  color: white;
+  background: var(--gold);
   border: none;
-  border-radius: 0.5rem;
-  font-size: 1rem;
+  border-radius: 40px;
   font-weight: bold;
+  font-size: 1.1rem;
+  font-family: 'MedievalSharp', cursive;
+  color: #2c1a0e;
   cursor: pointer;
-  transition: background 0.2s;
+  box-shadow: 0 4px 0 var(--gold-dark);
+  transition: 0.1s linear;
+  margin-top: 1rem;
 }
 
-.button:hover:not(:disabled) {
-  background: #0077b6;
+.button:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--gold-dark);
 }
 
 .button:disabled {
   opacity: 0.6;
-  cursor: not-allowed;
+  transform: none;
 }
 
 .error {
-  background: #dc2f02;
-  color: white;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  margin-bottom: 1rem;
+  background: rgba(178, 34, 34, 0.9);
+  padding: 0.6rem;
+  border-radius: 40px;
   text-align: center;
+  margin-bottom: 1rem;
+  font-weight: bold;
+  border-left: 6px solid #ffcc00;
 }

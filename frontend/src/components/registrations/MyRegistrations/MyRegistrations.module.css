@@ -1,92 +1,132 @@
+/* MyRegistrations.module.css - Mismo estilo que EventList */
 .container {
-  max-width: 1200px;
-  margin: 0 auto;
   padding: 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
 }
 
 .title {
   text-align: center;
-  color: white;
+  font-size: 2.8rem;
   margin-bottom: 2rem;
-  font-size: 2rem;
+  color: var(--gold);
+  text-shadow: 4px 4px 0 #2c1a0e;
+  font-family: 'MedievalSharp', cursive;
 }
 
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
+  gap: 2rem;
 }
 
 .card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 1rem;
+  background: rgba(44, 26, 14, 0.85);
+  backdrop-filter: blur(6px);
+  border: 1px solid #b87c4f;
+  border-radius: var(--border-radius-card);
   padding: 1.5rem;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: var(--box-shadow-card);
 }
 
 .card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  transform: translateY(-8px);
+  border-color: var(--gold);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.5);
 }
 
 .card h2 {
-  margin: 0 0 0.5rem 0;
-  color: #00b4d8;
-  font-size: 1.5rem;
+  font-size: 1.8rem;
+  color: var(--gold);
+  margin-bottom: 0.5rem;
+  font-family: 'MedievalSharp', cursive;
 }
 
 .card h3 {
-  margin: 0 0 0.75rem 0;
-  color: rgba(255, 255, 255, 0.8);
   font-size: 1rem;
-  font-weight: normal;
+  color: #e6d5b8;
+  font-style: italic;
+  margin-bottom: 1rem;
+  border-left: 3px solid var(--gold);
+  padding-left: 0.6rem;
 }
 
 .card p {
-  margin: 0.5rem 0;
-  color: rgba(255, 255, 255, 0.9);
+  margin: 0.4rem 0;
   font-size: 0.95rem;
 }
 
 .master {
+  color: #f4c542;
   font-weight: bold;
-  color: #ffb703;
+  background: rgba(0,0,0,0.3);
+  padding: 0.1rem 0.4rem;
+  border-radius: 16px;
 }
 
-.players {
+.players, .status {
   display: inline-block;
-  background: rgba(0, 180, 216, 0.3);
-  padding: 0.2rem 0.6rem;
+  background: rgba(0,0,0,0.5);
   border-radius: 20px;
-  font-size: 0.85rem;
-}
-
-.status {
-  display: inline-block;
-  padding: 0.2rem 0.5rem;
-  border-radius: 20px;
+  padding: 0.2rem 0.7rem;
   font-size: 0.8rem;
-  font-weight: bold;
+  margin-top: 0.3rem;
 }
 
-.statusOpen {
-  background: #2ecc71;
-  color: #fff;
-}
-
-.statusClosed {
-  background: #e67e22;
-  color: #fff;
-}
-
-.statusCancelled {
-  background: #e74c3c;
-  color: #fff;
-}
+.statusOpen { background: #2d6a4f; color: #d8f3dc; }
+.statusClosed { background: #a47148; color: #fefae0; }
+.statusCancelled { background: #9e2a2b; color: #ffd6ba; }
 
 .date {
   font-size: 0.85rem;
-  opacity: 0.8;
+  opacity: 0.9;
+  font-family: monospace;
+}
+
+/* Botones de acción */
+.buttonGroup {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.editButton, .deleteButton, .leaveButton {
+  flex: 1;
+  background: #5a3a1f;
+  border: none;
+  border-radius: 40px;
+  color: white;
+  font-weight: bold;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  transition: 0.1s;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.editButton {
+  background: #7f5539;
+}
+
+.deleteButton {
+  background: #9e2a2b;
+}
+
+.leaveButton {
+  background: #b47c48;
+}
+
+.editButton:hover { background: #9c6644; }
+.deleteButton:hover { background: #c32f2f; }
+.leaveButton:hover { background: #d68c3c; }
+
+.loading, .error, .noEvents {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+  background: rgba(0,0,0,0.6);
+  border-radius: 32px;
+  margin-top: 2rem;
 }

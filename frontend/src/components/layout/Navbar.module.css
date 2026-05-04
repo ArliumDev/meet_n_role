@@ -1,40 +1,74 @@
+/* Navbar.module.css */
 .navbar {
-  background-color: #1a1a2e;
-  padding: 1rem 2rem;
+  background: #2c1a0e;
+  border-bottom: 4px solid var(--gold);
+  padding: 0.8rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  flex-wrap: wrap;
+  font-family: 'Cinzel', serif;
 }
-
 .navLinks {
   display: flex;
   gap: 1.5rem;
+  flex-wrap: wrap;
 }
-
 .navLinks a {
-  color: white;
+  color: #f0e6d2;
   text-decoration: none;
-  font-weight: 500;
-  transition: color 0.2s;
+  font-weight: 600;
+  padding: 0.3rem 0.6rem;
+  border-radius: 40px;
+  transition: 0.2s;
 }
-
 .navLinks a:hover {
-  color: #00b4d8;
+  background: var(--gold);
+  color: #2c1a0e;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
-
-.logoutButton {
-  background: none;
-  border: 1px solid #dc2f02;
-  color: #dc2f02;
+.userMenu {
+  position: relative;
+}
+.userButton {
+  background: #4a2e1a;
+  border: 1px solid var(--gold);
+  border-radius: 40px;
+  color: var(--gold);
   padding: 0.4rem 1rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
   font-weight: bold;
-  transition: all 0.2s;
+  cursor: pointer;
+  font-family: inherit;
 }
-
-.logoutButton:hover {
-  background-color: #dc2f02;
-  color: white;
+.userButton:hover {
+  background: var(--gold);
+  color: #2c1a0e;
+}
+.dropdown {
+  position: absolute;
+  top: 110%;
+  right: 0;
+  background: #3a2618;
+  border: 1px solid var(--gold);
+  border-radius: 16px;
+  width: 200px;
+  z-index: 100;
+  box-shadow: 0 8px 16px black;
+}
+.dropdownItem {
+  display: block;
+  padding: 0.6rem 1rem;
+  color: #ffe8c7;
+  text-decoration: none;
+  border-bottom: 1px solid #5a3a1f;
+  transition: 0.1s;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: 'Cinzel', serif;
+  cursor: pointer;
+}
+.dropdownItem:hover {
+  background: var(--gold);
+  color: #2c1a0e;
 }

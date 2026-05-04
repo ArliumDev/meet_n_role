@@ -1,90 +1,82 @@
+/* EditEventModal.module.css */
 .overlay {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.8);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 2000;
 }
-
 .modal {
-  background: #1a1a2e;
+  background: #2a1c10;
+  border: 3px ridge var(--gold);
+  border-radius: 32px;
   padding: 2rem;
-  border-radius: 1rem;
   width: 90%;
-  max-width: 500px;
-  color: white;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+  color: #f0e6d2;
+  box-shadow: 0 0 30px rgba(0,0,0,0.8);
+  animation: fadeIn 0.2s;
 }
-
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95);}
+  to { opacity: 1; transform: scale(1);}
+}
 .modal h2 {
+  font-family: 'MedievalSharp', cursive;
+  color: var(--gold);
   text-align: center;
+  border-bottom: 2px solid var(--gold-dark);
+  display: inline-block;
+  width: auto;
   margin-bottom: 1rem;
+  padding-bottom: 0.3rem;
 }
-
 .modal label {
   display: block;
-  margin-top: 1rem;
+  margin: 1rem 0 0.2rem;
   font-weight: bold;
 }
-
 .modal input, .modal textarea, .modal select {
   width: 100%;
-  padding: 0.5rem;
-  margin-top: 0.25rem;
-  border-radius: 0.5rem;
-  border: none;
+  padding: 0.6rem;
+  border-radius: 32px;
+  border: 1px solid var(--wood-light);
+  background: #fff8ed;
+  font-family: 'Cinzel', serif;
 }
-
 .actions {
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
   margin-top: 1.5rem;
 }
-
 .actions button {
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1.5rem;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: 40px;
+  background: #5a3a1f;
+  color: white;
   cursor: pointer;
+  font-weight: bold;
 }
-
-.actions button[type="button"] {
-  background: #ccc;
-  color: black;
-}
-
 .actions button[type="submit"] {
-  background: #00b4d8;
-  color: white;
+  background: var(--gold);
+  color: #2c1a0e;
 }
-
+.actions button[type="button"]:hover {
+  background: #3e2814;
+}
 .error {
-  background: #dc2f02;
-  padding: 0.5rem;
-  border-radius: 0.5rem;
-  margin-bottom: 1rem;
+  background: rgba(178, 34, 34, 0.9);
+  padding: 0.6rem;
+  border-radius: 40px;
   text-align: center;
-}
-
-.deleteButton {
-  background: #dc2f02;
-  border: none;
-  border-radius: 0.5rem;
-  color: white;
-  cursor: pointer;
-  font-size: 0.9rem;
-  margin-top: 0.5rem;
-  margin-left: 0.5rem;
-  padding: 0.3rem 0.8rem;
-  transition: background 0.2s;
-}
-
-.deleteButton:hover {
-  background: #b91c00;
+  margin-bottom: 1rem;
+  font-weight: bold;
+  border-left: 6px solid #ffcc00;
 }
