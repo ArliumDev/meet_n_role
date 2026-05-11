@@ -38,14 +38,14 @@ export const getMe = () => {
 
 export const getUser = (user_id) => request('GET', `/users/${user_id}`, null, true);
 
-export const updateUser = (user_id, username = null, password = null) => {
+export const updateUser = (username = null, password = null) => {
   const body = {};
   if (username) body.username = username;
   if (password) body.password = password;
-  return request('PATCH', `/users/${user_id}`, body, true);
+  return request('PATCH', `/users/me`, body, true);
 };
 
-export const deleteUser = (user_id) => request('DELETE', `/users/${user_id}`, null, true);
+export const deleteUser = () => request('DELETE', `/users/me`, null, true);
 
 // /events API calls
 
