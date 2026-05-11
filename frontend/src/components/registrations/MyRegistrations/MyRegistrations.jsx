@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { getMyRegistrations, deleteEvent, leaveGame } from '../../../api/client';
 import EditEventModal from '../../events/EditEventModal/EditEventModal';
+import toast from 'react-hot-toast';
 import styles from './MyRegistrations.module.css';
 
 function MyRegistrations() {
@@ -40,7 +41,7 @@ function MyRegistrations() {
         await deleteEvent(event.id);
         refreshList();
       } catch (err) {
-        alert('Error al eliminar: ' + err.message);
+        toast.error('❌ Error al eliminar: ' + err.message);
       }
     }
   };
@@ -51,7 +52,7 @@ function MyRegistrations() {
         await leaveGame(event.id);
         refreshList();
       } catch (err) {
-        alert('Error al salir: ' + err.message);
+        toast.error('❌ Error al salir: ' + err.message)
       }
     }
   };

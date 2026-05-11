@@ -150,7 +150,6 @@
   background: #9a4b1f;
 }
 
-
 .deleteButton {
   margin-top: auto;
   background: #dc2f02;
@@ -165,4 +164,58 @@
 }
 .deleteButton:hover {
   background: #b91c00;
+}
+
+.filters {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.statusFilter {
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 40px;
+  background: rgba(255, 255, 255, 0.9);
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.searchWrapper {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.75rem 2.5rem 0.75rem 1rem;
+  border: none;
+  border-radius: 40px;
+  background: rgba(255, 255, 255, 0.9);
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+}
+
+.clearButton {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: #8b5a2b;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clearButton:hover {
+  color: #dc2f02;
 }
