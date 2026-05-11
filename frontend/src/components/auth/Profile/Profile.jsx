@@ -1,10 +1,80 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
-import { updateUser } from '../../../api/client';
+import { updateUser, deleteUser } from '../../../api/client';
 import styles from './Profile.module.css';
 
+// Componente para el formulario de eliminación
+function DeleteAccount({ onCancel }) {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [error, setError] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!password || !confirm) {
+      setError('Debes escribir tu contraseña y confirmarla');
+      return;
+    }
+    if (password !== confirm) {
+      setError('Las contraseñas no coinciden');
+      return;
+    }
+    if (!window.confirm('⚠️ Esta acción es IRREVERSIBLE. Se borrarán todas tus partidas y registros. ¿Estás seguro?')) {
+      return;
+    }
+    setDeleting(true);
+    setError('');
+    try {
+      await deleteUser();
+      logout();
+      navigate('/login', { replace: true });
+    } catch (err) {
+      setError(err.message);
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className={styles.deleteContainer}>
+      <div className={styles.form}>
+        <h2>⚠️ Eliminar cuenta</h2>
+        <p>Esta acción es permanente. Toda tu información se perderá.</p>
+        {error && <div className={styles.error}>{error}</div>}
+        <label>Contraseña actual</label>
+        <input
+          type="password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          className={styles.input}
+        />
+        <label>Confirmar contraseña</label>
+        <input
+          type="password"
+          value={confirm}
+          onChange={e => setConfirm(e.target.value)}
+          className={styles.input}
+        />
+        <div className={styles.deleteActions}>
+          <button onClick={handleDelete} disabled={deleting} className={styles.deleteButton}>
+            {deleting ? 'Eliminando...' : 'Sí, eliminar mi cuenta'}
+          </button>
+          <button onClick={onCancel} disabled={deleting} className={styles.cancelButton}>
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Componente principal Profile
 function Profile() {
-  const { user, login } = useAuth();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const [showDeleteForm, setShowDeleteForm] = useState(false);
   const [username, setUsername] = useState(user?.username || '');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -31,14 +101,8 @@ function Profile() {
         return;
       }
       await updateUser(user.user_id, updates.username, updates.password);
-      // Recargar datos del usuario (actualizar contexto)
-      const response = await fetch('http://localhost:8000/users/me', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      const newUser = await response.json();
-      // No tenemos una forma directa de actualizar el contexto sin volver a hacer login.
-      // Recargamos la página para forzar la actualización (simple pero efectivo)
-      window.location.reload();
+      setMessage('Perfil actualizado. Recargando...');
+      setTimeout(() => window.location.reload(), 1500);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -66,6 +130,12 @@ function Profile() {
     }
   };
 
+  // Si se está mostrando el formulario de eliminación, renderiza ese componente
+  if (showDeleteForm) {
+    return <DeleteAccount onCancel={() => setShowDeleteForm(false)} />;
+  }
+
+  // Renderizado normal del perfil
   return (
     <div className={styles.container}>
       <form className={styles.form} onSubmit={handleSubmit}>
@@ -103,6 +173,15 @@ function Profile() {
 
         <button type="button" onClick={handleReset} disabled={loading} className={styles.resetButton}>
           🔑 Resetear contraseña
+        </button>
+
+        {/* Botón para mostrar el formulario de eliminación */}
+        <button
+          type="button"
+          onClick={() => setShowDeleteForm(true)}
+          className={styles.deleteAccountButton}
+        >
+          🗑️ Eliminar mi cuenta
         </button>
       </form>
     </div>

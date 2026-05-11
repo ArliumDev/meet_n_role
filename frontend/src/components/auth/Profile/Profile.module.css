@@ -129,3 +129,71 @@
   transform: translateY(2px);
   box-shadow: 0 1px 0 #5a3a1f;
 }
+
+.deleteContainer {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.deleteActions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.deleteButton {
+  flex: 1;
+  padding: 0.75rem;
+  background: #dc2f02;
+  border: none;
+  border-radius: 40px;
+  font-weight: bold;
+  font-size: 1rem;
+  font-family: 'MedievalSharp', cursive;
+  color: white;
+  cursor: pointer;
+  transition: 0.1s linear;
+}
+
+.deleteButton:active {
+  transform: translateY(2px);
+}
+
+.deleteButton:disabled {
+  opacity: 0.6;
+}
+
+.cancelButton {
+  flex: 1;
+  padding: 0.75rem;
+  background: #5a3a1f;
+  border: none;
+  border-radius: 40px;
+  font-weight: bold;
+  font-size: 1rem;
+  font-family: 'MedievalSharp', cursive;
+  color: white;
+  cursor: pointer;
+}
+
+.deleteAccountButton {
+  width: 100%;
+  padding: 0.75rem;
+  background: #dc2f02;  /* Rojo intenso */
+  border: none;
+  border-radius: 40px;
+  font-weight: bold;
+  font-size: 1.1rem;
+  font-family: 'MedievalSharp', cursive;
+  color: white;
+  cursor: pointer;
+  transition: 0.1s linear;
+  margin-top: 0.75rem;
+}
+
+.deleteAccountButton:hover {
+  background: #b91c00;  /* Rojo más oscuro al pasar el ratón */
+}
