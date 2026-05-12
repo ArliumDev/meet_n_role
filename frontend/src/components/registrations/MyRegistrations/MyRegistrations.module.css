@@ -130,3 +130,30 @@
   border-radius: 32px;
   margin-top: 2rem;
 }
+
+.actionButtons {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.downloadButton {
+  background: #8b5a2b;
+  border: none;
+  border-radius: 40px;
+  color: white;
+  font-weight: bold;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  width: 100%;
+}
+
+.downloadButton:hover {
+  background: #6b3e1a;
+}
+
+.deleteButton, .leaveButton {
+  width: 100%;
+}

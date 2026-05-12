@@ -55,7 +55,7 @@ export const getEvent = (event_id) => request('GET', `/events/${event_id}`, null
 
 export const getEventPlayers = (event_id) => request('GET', `/events/${event_id}/players`, null, true);
 
-export const createEvent = (title, description, date, max_players) => request('POST', '/events/create_event', { title, description, date, max_players }, true);
+export const createEvent = (title, description, date, max_players, system_id) => request('POST', '/events/create_event', { title, description, date, max_players, system_id}, true);
 
 export const updateEvent = (event_id, updatedFields) => request('PATCH', `/events/${event_id}`, updatedFields, true);
 
@@ -68,3 +68,15 @@ export const getMyRegistrations = () => request('GET', '/registrations/me', null
 export const registerToGame = (event_id) => request('POST', `/registrations/${event_id}/register`, null, true);
 
 export const leaveGame = (event_id) => request('DELETE', `/registrations/${event_id}/unregister`, null, true);
+
+export const getSystems = () => request('GET', '/systems', null, true);
+
+export const downloadTemplate = (systemId) => {
+  const token = getToken();
+  return fetch(`${BASE_URL}/systems/${systemId}/template`, {
+    headers: { Authorization: `Bearer ${token}` },
+  }).then((res) => {
+    if (!res.ok) throw new Error('Error al descargar plantilla');
+    return res.blob();
+  });
+};

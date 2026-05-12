@@ -64,10 +64,12 @@ async def get_my_registrations(request: Request, user: APIUser = Depends(get_cur
                     events.status,
                     events.master_id,
                     users.username AS master_username,
-                    (SELECT COUNT(*) FROM registrations r2 WHERE r2.event_id = events.id) AS player_joined
+                    (SELECT COUNT(*) FROM registrations r2 WHERE r2.event_id = events.id) AS player_joined,
+                    systems.name AS system_name
                 FROM registrations
                 JOIN events ON registrations.event_id = events.id
                 JOIN users ON events.master_id = users.id
+                LEFT JOIN systems ON events.system_id = systems.id
                 WHERE registrations.user_id = $1
             )
             UNION
@@ -82,14 +84,17 @@ async def get_my_registrations(request: Request, user: APIUser = Depends(get_cur
                     events.status,
                     events.master_id,
                     users.username AS master_username,
-                    (SELECT COUNT(*) FROM registrations r2 WHERE r2.event_id = events.id) AS player_joined
+                    (SELECT COUNT(*) FROM registrations r2 WHERE r2.event_id = events.id) AS player_joined,
+                    systems.name AS system_name
                 FROM events
                 JOIN users ON events.master_id = users.id
+                LEFT JOIN systems ON events.system_id = systems.id
                 WHERE events.master_id = $1
             )
             ORDER BY date DESC
-            """, user.user_id
-        ) 
+            """,
+            user.user_id,
+        )
         return [
             {
                 "id": event["id"],
@@ -101,7 +106,8 @@ async def get_my_registrations(request: Request, user: APIUser = Depends(get_cur
                 "status": event["status"],
                 "master_username": event["master_username"],
                 "player_joined": event["player_joined"],
-                "master_id": event["master_id"]
+                "master_id": event["master_id"],
+                "system_name": event["system_name"],
             }
             for event in events
         ]

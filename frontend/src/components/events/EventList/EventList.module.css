@@ -219,3 +219,18 @@
 .clearButton:hover {
   color: #dc2f02;
 }
+
+.downloadButton {
+  margin-top: 0.5rem;
+  background: #8b5a2b;
+  border: none;
+  border-radius: 40px;
+  color: white;
+  font-weight: bold;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  width: 100%;
+}
+.downloadButton:hover {
+  background: #6b3e1a;
+}

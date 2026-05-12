@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import create_pool
-from routers import users, events, registrations, account
+from routers import users, events, registrations, account, systems
 from middleware.auth import JWTMiddleware
 
 @asynccontextmanager
@@ -26,3 +26,4 @@ app.include_router(account.router, prefix="/account")
 app.include_router(users.router, prefix="/users")
 app.include_router(events.router, prefix="/events")
 app.include_router(registrations.router, prefix="/registrations")
+app.include_router(systems.router, prefix="/systems")

@@ -13,14 +13,17 @@ async def get_events_global(request: Request, user: APIUser = Depends(get_curren
         events = await conn.fetch(
             """
             SELECT events.id, events.title, events.description, events.date, 
-                   events.max_players, events.created_at, events.status, 
-                   events.master_id,
-                   users.username AS master_username,
-                   COUNT(registrations.user_id) AS player_joined
-            FROM events
-            JOIN users ON events.master_id = users.id
-            LEFT JOIN registrations ON registrations.event_id = events.id
-            GROUP BY events.id, users.username, events.master_id
+           events.max_players, events.created_at, events.status, 
+           events.master_id,
+           users.username AS master_username,
+           COUNT(registrations.user_id) AS player_joined,
+           events.system_id,
+           systems.name AS system_name
+    FROM events
+    JOIN users ON events.master_id = users.id
+    LEFT JOIN registrations ON registrations.event_id = events.id
+    LEFT JOIN systems ON events.system_id = systems.id
+    GROUP BY events.id, users.username, events.master_id, events.system_id, systems.name
             """
         )
         # Convertir a lista de diccionarios incluyendo master_id
@@ -35,35 +38,46 @@ async def get_events_global(request: Request, user: APIUser = Depends(get_curren
                 "status": event["status"],
                 "master_username": event["master_username"],
                 "player_joined": event["player_joined"],
-                "master_id": event["master_id"]   # ← añadido
+                "master_id": event["master_id"],
+                "system_id": event["system_id"],
+                "system_name": event["system_name"]
             }
             for event in events
         ]
   
 @router.get("/{event_id}")
 async def get_event_info(event_id: int, request: Request, user: APIUser = Depends(get_current_user)):
-  pool = request.app.state.pool
-  async with pool.acquire() as conn:
-    event = await conn.fetchrow(
-      """
-      SELECT events.id, events.title, events.description, events.date, events.max_players, events.created_at, events.status, users.username AS master_username,
-      COUNT(registrations.user_id) AS players_joined
-      FROM events
-      JOIN users ON events.master_id = users.id
-      LEFT JOIN registrations ON registrations.event_id = events.id
-      WHERE events.id=$1
-      GROUP BY events.id, users.username      
-      """, event_id
-    )
-    if not event:
-      raise HTTPException(status_code=404, detail="Event not found")
-    return event
+    pool = request.app.state.pool
+    async with pool.acquire() as conn:
+        event = await conn.fetchrow(
+            """
+            SELECT events.id, events.title, events.description, events.date, 
+                   events.max_players, events.created_at, events.status,
+                   events.master_id,
+                   users.username AS master_username,
+                   COUNT(registrations.user_id) AS players_joined,
+                   events.system_id,
+                   systems.name AS system_name
+            FROM events
+            JOIN users ON events.master_id = users.id
+            LEFT JOIN registrations ON registrations.event_id = events.id
+            LEFT JOIN systems ON events.system_id = systems.id
+            WHERE events.id = $1
+            GROUP BY events.id, users.username, events.master_id, events.system_id, systems.name
+            """,
+            event_id
+        )
+        if not event:
+            raise HTTPException(status_code=404, detail="Event not found")
+        # Convertimos a diccionario normal (opcional, pero útil)
+        return dict(event)
 
 class CreateEvent(BaseModel):
   title: str
   description: str
   date: datetime
   max_players: int
+  system_id: int
 
 @router.post("/create_event")
 async def create_event(event: CreateEvent, request: Request, user: APIUser = Depends(get_current_user)):
@@ -71,7 +85,7 @@ async def create_event(event: CreateEvent, request: Request, user: APIUser = Dep
   async with pool.acquire() as conn:
     
     result = await conn.fetchrow(
-      "INSERT INTO events (title, description, date, max_players, master_id) VALUES ($1,$2,$3,$4,$5) RETURNING id, title, description, date, max_players, created_at", event.title, event.description, event.date, event.max_players, user.user_id
+      "INSERT INTO events (title, description, date, max_players, master_id, system_id) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id, title, description, date, max_players, created_at", event.title, event.description, event.date, event.max_players, user.user_id, event.system_id
     )
 
     return {"id": result["id"], "title": result["title"], "description": result["description"], "date": result["date"], "max_players": result["max_players"], "created_at": result["created_at"]}
@@ -87,6 +101,7 @@ class UpdateEvent(BaseModel):
   date: datetime | None = None
   max_players: int | None = None
   status: EventStatus | None = None
+  system_id: int | None = None
 
 @router.patch("/{event_id}")
 async def patch_event(event_id: int, body: UpdateEvent, request: Request, user: APIUser = Depends(get_current_user)):
@@ -115,7 +130,7 @@ async def patch_event(event_id: int, body: UpdateEvent, request: Request, user: 
       idx += 1
     values.append(event_id)
     set_query = ", ".join(set_clauses)
-    query = f"UPDATE events SET {set_query} WHERE id=${idx} RETURNING id, title, description, date, max_players, created_at, status"
+    query = f"UPDATE events SET {set_query} WHERE id=${idx} RETURNING id, title, description, date, max_players, created_at, status, system_id"
 
     updated = await conn.fetchrow(query, *values)
     return {
@@ -124,7 +139,8 @@ async def patch_event(event_id: int, body: UpdateEvent, request: Request, user: 
       "date": updated["date"],
       "max_players": updated["max_players"],
       "created_at": updated["created_at"],
-      "status": updated["status"]
+      "status": updated["status"],
+      "system_id": updated["system_id"]
     }
 
 @router.delete("/{event_id}")

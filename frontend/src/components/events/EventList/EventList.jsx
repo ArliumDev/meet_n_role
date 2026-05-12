@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
-import { getAllEvents, getMyRegistrations, registerToGame, leaveGame, deleteEvent } from '../../../api/client';
+import SearchAndFilter from '../../common/SearchAndFilter/SearchAndFilter';
+import { getAllEvents, getMyRegistrations, registerToGame, leaveGame, deleteEvent, getSystems, downloadTemplate } from '../../../api/client';
 import toast from 'react-hot-toast';
 import styles from './EventList.module.css';
 
@@ -11,7 +12,9 @@ function EventList() {
   const { user } = useAuth();
   const [registeredEventIds, setRegisteredEventIds] = useState(new Set());
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [systems, setSystems] = useState([]);
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterSubcategory, setFilterSubcategory] = useState('');
 
   const loadData = async () => {
     try {
@@ -31,10 +34,27 @@ function EventList() {
     loadData();
   }, []);
 
+  useEffect(() => {
+    const loadSystems = async () => {
+      try {
+        const data = await getSystems();
+        setSystems(data);
+      } catch (err) {
+        console.error('Error cargando sistemas', err);
+      }
+    };
+    loadSystems();
+  }, []);
+
   const filteredEvents = events.filter((event) => {
     const matchesTitle = event.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || event.status === statusFilter;
-    return matchesTitle && matchesStatus;
+    let matchesCategory = true;
+    if (filterCategory === 'system') {
+      matchesCategory = event.system_name === filterSubcategory;
+    } else if (filterCategory === 'status') {
+      matchesCategory = event.status === filterSubcategory;
+    }
+    return matchesTitle && matchesCategory;
   });
 
   const handleJoin = async (eventId) => {
@@ -75,27 +95,37 @@ function EventList() {
     }
   };
 
+  const handleDownloadTemplate = async (systemId, systemName) => {
+    try {
+      const blob = await downloadTemplate(systemId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `plantilla_${systemName}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success('Plantilla descargada');
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
   if (loading) return <div className={styles.loading}>Cargando partidas...</div>;
   if (error) return <div className={styles.error}>Error: {error}</div>;
 
   return (
     <div className={styles.container}>
-      <div className={styles.filters}>
-        <div className={styles.searchWrapper}>
-          <input type="text" placeholder="🔍 Buscar por título..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className={styles.searchInput} />
-          {searchTerm && (
-            <button type="button" className={styles.clearButton} onClick={() => setSearchTerm('')} aria-label="Limpiar búsqueda">
-              ✖️
-            </button>
-          )}
-        </div>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={styles.statusFilter}>
-          <option value="all">📌 Todas</option>
-          <option value="open">✅ Abiertas</option>
-          <option value="closed">🔒 Cerradas</option>
-          <option value="cancelled">❌ Canceladas</option>
-        </select>
-      </div>
+      <SearchAndFilter
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        filterCategory={filterCategory}
+        setFilterCategory={setFilterCategory}
+        filterSubcategory={filterSubcategory}
+        setFilterSubcategory={setFilterSubcategory}
+        systems={systems}
+      />
       <h1 className={styles.title}>📅 Partidas disponibles</h1>
       <div className={styles.grid}>
         {filteredEvents.map((event) => {
@@ -103,56 +133,63 @@ function EventList() {
           const isRegistered = registeredEventIds.has(event.id);
           const isFull = (event.player_joined || 0) >= event.max_players;
 
-          // CASO MASTER: botón eliminar
+          // Caso master
           if (isMaster) {
             return (
               <div key={event.id} className={styles.card}>
                 <h2>{event.title}</h2>
                 <h3>{event.description}</h3>
+                <p>🎲 Sistema: {event.system_name || 'No especificado'}</p>
                 <p className={styles.date}>🗓️ Fecha: {new Date(event.date).toLocaleDateString()}</p>
                 <p className={styles.players}>
                   👥 Jugadores: {event.player_joined || 0}/{event.max_players}
                 </p>
-                <p>
-                  🎲 Master: <span className={styles.master}>{event.master_username}</span>
-                </p>
-                <p>
-                  📌 Estado: <span className={`${styles.status} ${event.status === 'open' ? styles.statusOpen : event.status === 'closed' ? styles.statusClosed : styles.statusCancelled}`}>{event.status}</span>
-                </p>
-                <button className={styles.deleteButton} onClick={() => handleDelete(event.id, event.title)}>
-                  🗑️ Eliminar partida
-                </button>
+                <p>🎲 Master: <span className={styles.master}>{event.master_username}</span></p>
+                <p>📌 Estado: <span className={`${styles.status} ${event.status === 'open' ? styles.statusOpen : event.status === 'closed' ? styles.statusClosed : styles.statusCancelled}`}>{event.status}</span></p>
+                <div className={styles.actionButtons}>
+                  {event.system_id && (
+                    <button className={styles.downloadButton} onClick={() => handleDownloadTemplate(event.system_id, event.system_name)}>
+                      📥 Plantilla
+                    </button>
+                  )}
+                  <button className={styles.deleteButton} onClick={() => handleDelete(event.id, event.title)}>
+                    🗑️ Eliminar partida
+                  </button>
+                </div>
               </div>
             );
           }
 
-          // CASO NO MASTER: botones apuntarse/salir
+          // Caso no master (jugador)
           return (
             <div key={event.id} className={styles.card}>
               <h2>{event.title}</h2>
               <h3>{event.description}</h3>
+              <p>🎲 Sistema: {event.system_name || 'No especificado'}</p>
               <p className={styles.date}>🗓️ Fecha: {new Date(event.date).toLocaleDateString()}</p>
               <p className={styles.players}>
                 👥 Jugadores: {event.player_joined || 0}/{event.max_players}
               </p>
-              <p>
-                🎲 Master: <span className={styles.master}>{event.master_username}</span>
-              </p>
-              <p>
-                📌 Estado: <span className={`${styles.status} ${event.status === 'open' ? styles.statusOpen : event.status === 'closed' ? styles.statusClosed : styles.statusCancelled}`}>{event.status}</span>
-              </p>
-
-              {isRegistered ? (
-                <button className={styles.leaveButton} onClick={() => handleLeave(event.id)}>
-                  🚪 Salir de la partida
-                </button>
-              ) : (
-                event.status === 'open' && (
-                  <button className={styles.joinButton} onClick={() => handleJoin(event.id)} disabled={isFull}>
-                    {isFull ? '❌ Partida llena' : '🎲 Apuntarse'}
+              <p>🎲 Master: <span className={styles.master}>{event.master_username}</span></p>
+              <p>📌 Estado: <span className={`${styles.status} ${event.status === 'open' ? styles.statusOpen : event.status === 'closed' ? styles.statusClosed : styles.statusCancelled}`}>{event.status}</span></p>
+              <div className={styles.actionButtons}>
+                {event.system_id && isRegistered && (
+                  <button className={styles.downloadButton} onClick={() => handleDownloadTemplate(event.system_id, event.system_name)}>
+                    📥 Plantilla
                   </button>
-                )
-              )}
+                )}
+                {isRegistered ? (
+                  <button className={styles.leaveButton} onClick={() => handleLeave(event.id)}>
+                    🚪 Salir de la partida
+                  </button>
+                ) : (
+                  event.status === 'open' && (
+                    <button className={styles.joinButton} onClick={() => handleJoin(event.id)} disabled={isFull}>
+                      {isFull ? '❌ Partida llena' : '🎲 Apuntarse'}
+                    </button>
+                  )
+                )}
+              </div>
             </div>
           );
         })}
