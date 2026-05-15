@@ -38,6 +38,7 @@ function EditEventModal({ event, onClose, onSave }) {
       setMaxPlayers(event.max_players?.toString() || '');
       setStatus(event.status || 'open');
       setSystemId(event.system_id?.toString() || '');
+      console.log('Event en modal:', event);
     }
   }, [event]);
 

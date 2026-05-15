@@ -234,3 +234,19 @@
 .downloadButton:hover {
   background: #6b3e1a;
 }
+
+.detailButton {
+  background: #2c3e66;
+  border: none;
+  border-radius: 40px;
+  color: white;
+  font-weight: bold;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.detailButton:hover {
+  background: #1d2c44;
+}

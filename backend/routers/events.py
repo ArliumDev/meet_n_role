@@ -51,7 +51,7 @@ async def get_event_info(event_id: int, request: Request, user: APIUser = Depend
     async with pool.acquire() as conn:
         event = await conn.fetchrow(
             """
-            SELECT events.id, events.title, events.description, events.date, 
+            SELECT events.id, events.title, events.description, events.date,
                    events.max_players, events.created_at, events.status,
                    events.master_id,
                    users.username AS master_username,
@@ -65,11 +65,11 @@ async def get_event_info(event_id: int, request: Request, user: APIUser = Depend
             WHERE events.id = $1
             GROUP BY events.id, users.username, events.master_id, events.system_id, systems.name
             """,
-            event_id
+            event_id,
         )
         if not event:
             raise HTTPException(status_code=404, detail="Event not found")
-        # Convertimos a diccionario normal (opcional, pero útil)
+        # Convertir a diccionario (FastAPI lo hace automáticamente)
         return dict(event)
 
 class CreateEvent(BaseModel):

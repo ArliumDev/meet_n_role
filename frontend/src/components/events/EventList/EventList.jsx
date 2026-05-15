@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import SearchAndFilter from '../../common/SearchAndFilter/SearchAndFilter';
 import { getAllEvents, getMyRegistrations, registerToGame, leaveGame, deleteEvent, getSystems, downloadTemplate } from '../../../api/client';
+import EventDetailModal from '../EventDetailModal/EventDetailModal';
 import toast from 'react-hot-toast';
 import styles from './EventList.module.css';
 
@@ -15,6 +16,7 @@ function EventList() {
   const [systems, setSystems] = useState([]);
   const [filterCategory, setFilterCategory] = useState('');
   const [filterSubcategory, setFilterSubcategory] = useState('');
+  const [detailEventId, setDetailEventId] = useState(null);
 
   const loadData = async () => {
     try {
@@ -155,6 +157,9 @@ function EventList() {
                   <button className={styles.deleteButton} onClick={() => handleDelete(event.id, event.title)}>
                     🗑️ Eliminar partida
                   </button>
+                  <button className={styles.detailButton} onClick={() => setDetailEventId(event.id)}>
+                    🔍 Ver detalles
+                  </button>
                 </div>
               </div>
             );
@@ -189,11 +194,23 @@ function EventList() {
                     </button>
                   )
                 )}
+                <button className={styles.detailButton} onClick={() => setDetailEventId(event.id)}>
+                  🔍 Ver detalles
+                </button>
               </div>
             </div>
           );
         })}
       </div>
+
+      {detailEventId && (
+        <EventDetailModal
+          eventId={detailEventId}
+          isOpen={!!detailEventId}
+          onClose={() => setDetailEventId(null)}
+          onEventChange={loadData}
+        />
+      )}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { getMyRegistrations, deleteEvent, leaveGame, getSystems, downloadTemplate } from '../../../api/client';
 import EditEventModal from '../../events/EditEventModal/EditEventModal';
+import EventDetailModal from '../../events/EventDetailModal/EventDetailModal';
 import SearchAndFilter from '../../common/SearchAndFilter/SearchAndFilter';
 import toast from 'react-hot-toast';
 import styles from './MyRegistrations.module.css';
@@ -17,6 +18,7 @@ function MyRegistrations() {
   const [filterCategory, setFilterCategory] = useState('');
   const [filterSubcategory, setFilterSubcategory] = useState('');
   const [systems, setSystems] = useState([]);
+  const [detailEventId, setDetailEventId] = useState(null);
 
   useEffect(() => {
     const loadRegistrations = async () => {
@@ -177,6 +179,9 @@ function MyRegistrations() {
                       🚪 Salir de la partida
                     </button>
                   )}
+                  <button className={styles.detailButton} onClick={() => setDetailEventId(event.id)}>
+                    🔍 Ver detalles
+                  </button>
                 </div>
               </div>
             );
@@ -185,6 +190,15 @@ function MyRegistrations() {
       )}
 
       {editedEvent && <EditEventModal event={editedEvent} onClose={handleCloseModal} onSave={refreshList} />}
+
+      {detailEventId && (
+        <EventDetailModal
+          eventId={detailEventId}
+          isOpen={!!detailEventId}
+          onClose={() => setDetailEventId(null)}
+          onEventChange={refreshList}
+        />
+      )}
     </div>
   );
 }

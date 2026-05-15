@@ -5,48 +5,48 @@ router = APIRouter()
 
 @router.post("/{event_id}/register")
 async def register_to_game(event_id: int, request: Request, user: APIUser = Depends(get_current_user)):
-  pool = request.app.state.pool
-  async with pool.acquire() as conn:
-    event = await conn.fetchrow(
-      "SELECT id, max_players, status FROM events where id=$1", event_id
-    )
-    if not event:
-      raise HTTPException(status_code=404, detail="Event not found")
-    if event["status"] != "open":
-      raise HTTPException(status_code=400, detail="Event not open for registration")
-    
-    existing = await conn.fetchrow(
-      "SELECT id FROM registrations WHERE user_id=$1 AND event_id=$2", user.user_id, event_id
-    )
-    if existing:
-      raise HTTPException(status_code=400, detail="Already registered")
-    
-    players_count = await conn.fetchval(
-      "SELECT COUNT(*) FROM registrations WHERE event_id=$1", event_id
-    )
-    if players_count >= event["max_players"]:
-      raise HTTPException(status_code=400, detail="Event is full")
-    
-    await conn.execute(
-      "INSERT INTO registrations (user_id, event_id) VALUES ($1,$2)", user.user_id, event_id
-    )
-    return {"detail": "Registered successfully"}
-  
+    pool = request.app.state.pool
+    async with pool.acquire() as conn:
+        event = await conn.fetchrow(
+            "SELECT id, max_players, status FROM events WHERE id=$1", event_id
+        )
+        if not event:
+            raise HTTPException(status_code=404, detail="Event not found")
+        if event["status"] != "open":
+            raise HTTPException(status_code=400, detail="Event not open for registration")
+        
+        existing = await conn.fetchrow(
+            "SELECT id FROM registrations WHERE user_id=$1 AND event_id=$2", user.user_id, event_id
+        )
+        if existing:
+            raise HTTPException(status_code=400, detail="Already registered")
+        
+        players_count = await conn.fetchval(
+            "SELECT COUNT(*) FROM registrations WHERE event_id=$1", event_id
+        )
+        if players_count >= event["max_players"]:
+            raise HTTPException(status_code=400, detail="Event is full")
+        
+        await conn.execute(
+            "INSERT INTO registrations (user_id, event_id) VALUES ($1,$2)", user.user_id, event_id
+        )
+        return {"detail": "Registered successfully"}
+
 @router.delete("/{event_id}/unregister")
 async def leave_game(event_id: int, request: Request, user: APIUser = Depends(get_current_user)):
-  pool = request.app.state.pool
-  async with pool.acquire() as conn:
-    existing = await conn.fetchrow(
-      "SELECT id FROM registrations WHERE event_id=$1 AND user_id=$2", event_id, user.user_id
-    )
-    if not existing:
-      raise HTTPException(status_code=404, detail="Registration not found")
-    
-    await conn.execute(
-      "DELETE FROM registrations WHERE event_id=$1 AND user_id=$2", event_id, user.user_id
-    )
-    return {"detail": "Unregistered successfully"}
-  
+    pool = request.app.state.pool
+    async with pool.acquire() as conn:
+        existing = await conn.fetchrow(
+            "SELECT id FROM registrations WHERE event_id=$1 AND user_id=$2", event_id, user.user_id
+        )
+        if not existing:
+            raise HTTPException(status_code=404, detail="Registration not found")
+        
+        await conn.execute(
+            "DELETE FROM registrations WHERE event_id=$1 AND user_id=$2", event_id, user.user_id
+        )
+        return {"detail": "Unregistered successfully"}
+
 @router.get("/me")
 async def get_my_registrations(request: Request, user: APIUser = Depends(get_current_user)):
     pool = request.app.state.pool
@@ -65,7 +65,8 @@ async def get_my_registrations(request: Request, user: APIUser = Depends(get_cur
                     events.master_id,
                     users.username AS master_username,
                     (SELECT COUNT(*) FROM registrations r2 WHERE r2.event_id = events.id) AS player_joined,
-                    systems.name AS system_name
+                    systems.name AS system_name,
+                    events.system_id
                 FROM registrations
                 JOIN events ON registrations.event_id = events.id
                 JOIN users ON events.master_id = users.id
@@ -85,7 +86,8 @@ async def get_my_registrations(request: Request, user: APIUser = Depends(get_cur
                     events.master_id,
                     users.username AS master_username,
                     (SELECT COUNT(*) FROM registrations r2 WHERE r2.event_id = events.id) AS player_joined,
-                    systems.name AS system_name
+                    systems.name AS system_name,
+                    events.system_id
                 FROM events
                 JOIN users ON events.master_id = users.id
                 LEFT JOIN systems ON events.system_id = systems.id
@@ -108,6 +110,32 @@ async def get_my_registrations(request: Request, user: APIUser = Depends(get_cur
                 "player_joined": event["player_joined"],
                 "master_id": event["master_id"],
                 "system_name": event["system_name"],
+                "system_id": event["system_id"]
             }
             for event in events
         ]
+
+@router.delete("/{event_id}/kick/{user_id}")
+async def kick_player(event_id: int, user_id: int, request: Request, user: APIUser = Depends(get_current_user)):
+    pool = request.app.state.pool
+    async with pool.acquire() as conn:
+        event = await conn.fetchrow("SELECT master_id FROM events WHERE id = $1", event_id)
+        if not event:
+            raise HTTPException(status_code=404, detail="Event not found")
+        
+        if event["master_id"] != user.user_id:
+            raise HTTPException(status_code=403, detail="Only the master can kick players")
+        
+        if user_id == user.user_id:
+            raise HTTPException(status_code=400, detail="You cannot kick yourself")
+        
+        reg = await conn.fetchrow(
+            "SELECT id FROM registrations WHERE event_id = $1 AND user_id = $2", event_id, user_id
+        )
+        if not reg:
+            raise HTTPException(status_code=404, detail="Player is not registered in this event")
+        
+        await conn.execute(
+            "DELETE FROM registrations WHERE event_id = $1 AND user_id = $2", event_id, user_id
+        )
+        return {"detail": f"Player {user_id} has been kicked from the event"}

@@ -1,0 +1,95 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.modal {
+  background: #2a1c10;
+  border: 3px ridge var(--gold);
+  border-radius: 32px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 700px;
+  max-height: 80vh;
+  overflow-y: auto;
+  color: #f0e6d2;
+  position: relative;
+}
+
+.closeButton {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--gold);
+}
+
+.info {
+  margin: 1rem 0;
+}
+
+.playersSection {
+  margin: 1rem 0;
+}
+
+.playersList {
+  list-style: none;
+  padding: 0;
+}
+
+.playerItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  border-bottom: 1px solid #5a3a1f;
+}
+
+.kickButton {
+  background: #dc2f02;
+  border: none;
+  border-radius: 20px;
+  color: white;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.joinButton, .leaveButton, .closeModalButton {
+  padding: 0.5rem 1rem;
+  border-radius: 40px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.joinButton {
+  background: #2d6a4f;
+  color: white;
+}
+
+.leaveButton {
+  background: #b45f2b;
+  color: white;
+}
+
+.closeModalButton {
+  background: #5a3a1f;
+  color: white;
+}
