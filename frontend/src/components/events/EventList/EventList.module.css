@@ -250,3 +250,15 @@
 .detailButton:hover {
   background: #1d2c44;
 }
+
+.bannedButton {
+  background: #6c757d;
+  border: none;
+  border-radius: 40px;
+  color: white;
+  font-weight: bold;
+  padding: 0.5rem 1rem;
+  cursor: not-allowed;
+  width: 100%;
+  margin-top: 0.5rem;
+}

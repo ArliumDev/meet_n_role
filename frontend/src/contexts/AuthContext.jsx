@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { signIn, signUp, getMe } from '../api/client';
+import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
 
@@ -10,9 +11,10 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); //true mientras se verifica el token guardado
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Persistir sesión al recargar
   useEffect(() => {
     const savedToken = localStorage.getItem('token');
     if (savedToken) {
@@ -29,7 +31,9 @@ export const AuthProvider = ({ children }) => {
         }
       };
       persistUser();
-    } else setLoading(false);
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   const login = async (username, password) => {
@@ -41,7 +45,6 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('token', token);
       const data = await getMe();
       setUser(data);
-      console.log('User guardado en contexto:', data);
     } catch (err) {
       setError(err.message || 'Error al iniciar sesión');
     } finally {
@@ -52,7 +55,6 @@ export const AuthProvider = ({ children }) => {
   const register = async (username, password) => {
     setLoading(true);
     setError(null);
-
     try {
       await signUp(username, password);
       await login(username, password);
@@ -63,12 +65,42 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  // Memoizamos logout para que no cambie de identidad en cada render
+  const logout = useCallback(() => {
     setToken(null);
     setUser(null);
     localStorage.removeItem('token');
     setError(null);
-  };
+  }, []);
+
+  // Cierre por inactividad (30 minutos)
+  useEffect(() => {
+    if (!user) return; // solo activar si hay usuario logueado
+
+    let timeoutId;
+
+    const resetTimer = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        logout();
+        toast?.info('Sesión expirada por inactividad');
+      }, 30 * 60 * 1000); // 30 minutos (cambia a 2*60*1000 para pruebas)
+    };
+
+    const activityEvents = ['mousedown', 'keydown', 'scroll', 'click', 'mousemove'];
+
+    const handleActivity = () => resetTimer();
+
+    // Iniciar timer y registrar eventos
+    resetTimer();
+    activityEvents.forEach(event => window.addEventListener(event, handleActivity));
+
+    // Limpiar al desmontar o cuando user/logout cambien
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      activityEvents.forEach(event => window.removeEventListener(event, handleActivity));
+    };
+  }, [user, logout]);
 
   const value = {
     token,

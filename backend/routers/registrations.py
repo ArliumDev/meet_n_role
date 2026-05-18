@@ -15,6 +15,13 @@ async def register_to_game(event_id: int, request: Request, user: APIUser = Depe
         if event["status"] != "open":
             raise HTTPException(status_code=400, detail="Event not open for registration")
         
+        banned = await conn.fetchval(
+            "SELECT 1 FROM event_bans WHERE event_id=$1 AND user_id=$2", event_id, user.user_id
+        )
+
+        if banned:
+            raise HTTPException(status_code=403, detail="You are banned from this event")
+        
         existing = await conn.fetchrow(
             "SELECT id FROM registrations WHERE user_id=$1 AND event_id=$2", user.user_id, event_id
         )
@@ -139,3 +146,37 @@ async def kick_player(event_id: int, user_id: int, request: Request, user: APIUs
             "DELETE FROM registrations WHERE event_id = $1 AND user_id = $2", event_id, user_id
         )
         return {"detail": f"Player {user_id} has been kicked from the event"}
+
+@router.post("/{event_id}/ban/{user_id}")
+async def ban_player(event_id: int, user_id: int, request: Request, user: APIUser = Depends(get_current_user)):
+    pool = request.app.state.pool
+    async with pool.acquire() as conn:
+        event = await conn.fetchrow("SELECT master_id FROM events WHERE id=$1", event_id)
+        if not event:
+            raise HTTPException(status_code=404, detail="Event not found")
+        
+        if event["master_id"] != user.user_id:
+            raise HTTPException(status_code=403, detail="Only the master can ban players")
+        if user_id == user.user_id:
+            raise HTTPException(status_code=400, detail="You cannot ban yourself")
+        
+        reg = await conn.fetchrow("SELECT id FROM registrations WHERE event_id=$1 AND user_id=$2", event_id, user_id)
+        if not reg:
+            raise HTTPException(status_code=404,detail="Player is not registered in this event")
+        
+        await conn.execute("DELETE FROM registrations WHERE event_id=$1 AND user_id=$2", event_id, user_id)
+
+        await conn.execute(
+            """
+            INSERT INTO event_bans (event_id, user_id) VALUES ($1,$2) ON CONFLICT (event_id, user_id) DO NOTHING
+            """, event_id, user_id)
+        return {"detail": f"player {user_id} has been banned from the event"}
+
+@router.get("/me/bans")
+async def get_my_bans(request: Request, user: APIUser = Depends(get_current_user)):
+    pool = request.app.state.pool
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            "SELECT event_id FROM event_bans WHERE user_id=$1", user.user_id
+        )
+        return [row["event_id"] for row in rows]

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import SearchAndFilter from '../../common/SearchAndFilter/SearchAndFilter';
-import { getAllEvents, getMyRegistrations, registerToGame, leaveGame, deleteEvent, getSystems, downloadTemplate } from '../../../api/client';
+import { getAllEvents, getMyRegistrations, registerToGame, leaveGame, deleteEvent, getSystems, downloadTemplate, getMyBans } from '../../../api/client';
 import EventDetailModal from '../EventDetailModal/EventDetailModal';
 import toast from 'react-hot-toast';
 import styles from './EventList.module.css';
@@ -12,6 +12,7 @@ function EventList() {
   const [error, setError] = useState(null);
   const { user } = useAuth();
   const [registeredEventIds, setRegisteredEventIds] = useState(new Set());
+  const [bannedEventIds, setBannedEventIds] = useState(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [systems, setSystems] = useState([]);
   const [filterCategory, setFilterCategory] = useState('');
@@ -21,10 +22,12 @@ function EventList() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [eventsData, registrationsData] = await Promise.all([getAllEvents(), getMyRegistrations()]);
+      const [eventsData, registrationsData, bansData] = await Promise.all([getAllEvents(), getMyRegistrations(), getMyBans()]);
       setEvents(eventsData);
       const ids = new Set(registrationsData.map((reg) => reg.id));
       setRegisteredEventIds(ids);
+      const bannedIds = new Set(bansData);
+      setBannedEventIds(bannedIds);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -119,15 +122,7 @@ function EventList() {
 
   return (
     <div className={styles.container}>
-      <SearchAndFilter
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        filterCategory={filterCategory}
-        setFilterCategory={setFilterCategory}
-        filterSubcategory={filterSubcategory}
-        setFilterSubcategory={setFilterSubcategory}
-        systems={systems}
-      />
+      <SearchAndFilter searchTerm={searchTerm} setSearchTerm={setSearchTerm} filterCategory={filterCategory} setFilterCategory={setFilterCategory} filterSubcategory={filterSubcategory} setFilterSubcategory={setFilterSubcategory} systems={systems} />
       <h1 className={styles.title}>📅 Partidas disponibles</h1>
       <div className={styles.grid}>
         {filteredEvents.map((event) => {
@@ -146,8 +141,12 @@ function EventList() {
                 <p className={styles.players}>
                   👥 Jugadores: {event.player_joined || 0}/{event.max_players}
                 </p>
-                <p>🎲 Master: <span className={styles.master}>{event.master_username}</span></p>
-                <p>📌 Estado: <span className={`${styles.status} ${event.status === 'open' ? styles.statusOpen : event.status === 'closed' ? styles.statusClosed : styles.statusCancelled}`}>{event.status}</span></p>
+                <p>
+                  🎲 Master: <span className={styles.master}>{event.master_username}</span>
+                </p>
+                <p>
+                  📌 Estado: <span className={`${styles.status} ${event.status === 'open' ? styles.statusOpen : event.status === 'closed' ? styles.statusClosed : styles.statusCancelled}`}>{event.status}</span>
+                </p>
                 <div className={styles.actionButtons}>
                   {event.system_id && (
                     <button className={styles.downloadButton} onClick={() => handleDownloadTemplate(event.system_id, event.system_name)}>
@@ -175,15 +174,24 @@ function EventList() {
               <p className={styles.players}>
                 👥 Jugadores: {event.player_joined || 0}/{event.max_players}
               </p>
-              <p>🎲 Master: <span className={styles.master}>{event.master_username}</span></p>
-              <p>📌 Estado: <span className={`${styles.status} ${event.status === 'open' ? styles.statusOpen : event.status === 'closed' ? styles.statusClosed : styles.statusCancelled}`}>{event.status}</span></p>
+              <p>
+                🎲 Master: <span className={styles.master}>{event.master_username}</span>
+              </p>
+              <p>
+                📌 Estado: <span className={`${styles.status} ${event.status === 'open' ? styles.statusOpen : event.status === 'closed' ? styles.statusClosed : styles.statusCancelled}`}>{event.status}</span>
+              </p>
               <div className={styles.actionButtons}>
                 {event.system_id && isRegistered && (
                   <button className={styles.downloadButton} onClick={() => handleDownloadTemplate(event.system_id, event.system_name)}>
                     📥 Plantilla
                   </button>
                 )}
-                {isRegistered ? (
+
+                {bannedEventIds.has(event.id) ? (
+                  <button className={styles.bannedButton} disabled>
+                    🚫 Baneado
+                  </button>
+                ) : isRegistered ? (
                   <button className={styles.leaveButton} onClick={() => handleLeave(event.id)}>
                     🚪 Salir de la partida
                   </button>
@@ -194,6 +202,7 @@ function EventList() {
                     </button>
                   )
                 )}
+
                 <button className={styles.detailButton} onClick={() => setDetailEventId(event.id)}>
                   🔍 Ver detalles
                 </button>
@@ -203,14 +212,7 @@ function EventList() {
         })}
       </div>
 
-      {detailEventId && (
-        <EventDetailModal
-          eventId={detailEventId}
-          isOpen={!!detailEventId}
-          onClose={() => setDetailEventId(null)}
-          onEventChange={loadData}
-        />
-      )}
+      {detailEventId && <EventDetailModal eventId={detailEventId} isOpen={!!detailEventId} onClose={() => setDetailEventId(null)} onEventChange={loadData} />}
     </div>
   );
 }

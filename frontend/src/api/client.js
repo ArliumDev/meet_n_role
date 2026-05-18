@@ -55,7 +55,7 @@ export const getEvent = (event_id) => request('GET', `/events/${event_id}`, null
 
 export const getEventPlayers = (event_id) => request('GET', `/events/${event_id}/players`, null, true);
 
-export const createEvent = (title, description, date, max_players, system_id) => request('POST', '/events/create_event', { title, description, date, max_players, system_id}, true);
+export const createEvent = (title, description, date, max_players, system_id) => request('POST', '/events/create_event', { title, description, date, max_players, system_id }, true);
 
 export const updateEvent = (event_id, updatedFields) => request('PATCH', `/events/${event_id}`, updatedFields, true);
 
@@ -80,3 +80,9 @@ export const downloadTemplate = (systemId) => {
     return res.blob();
   });
 };
+
+export const getMyBans = () => request('GET', '/registrations/me/bans', null, true);
+
+export const kickPlayer = (event_id, user_id) => request('DELETE', `/registrations/${event_id}/kick/${user_id}`, null, true);
+
+export const banPlayer = (event_id, user_id) => request('POST', `/registrations/${event_id}/ban/${user_id}`, null, true);

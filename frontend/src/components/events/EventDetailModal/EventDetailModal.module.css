@@ -93,3 +93,21 @@
   background: #5a3a1f;
   color: white;
 }
+
+.playerActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.banButton {
+  background: #6c757d;
+  border: none;
+  border-radius: 20px;
+  color: white;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+}
+
+.banButton:hover {
+  background: #5a6268;
+}
