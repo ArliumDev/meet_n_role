@@ -36,7 +36,7 @@ services:
       - "5173:5173"
     volumes:
       - ./frontend:/app
-      - /app/node_modules
+      - node_modules_frontend:/app/node_modules 
     environment:
       - VITE_API_URL=http://localhost:8000
 
