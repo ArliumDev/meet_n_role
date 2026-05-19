@@ -42,3 +42,4 @@ services:
 
 volumes:
   pgsdata_tfg:
+  node_modules_frontend:
